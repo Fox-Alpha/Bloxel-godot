@@ -28,6 +28,14 @@ Godot 4.7 Tetris clone (GDScript), multiplayer over LAN, developed with OpenCode
 - LSP tools require Godot Editor on port 6005; format/lint/changelog work standalone
 - Tool prefix: `godot-lsp_*`
 
+### godot-export (local)
+- Command: `uv run --script ~/.config/opencode/tools/godot-export-mcp`
+- Config: `~/.config/opencode/opencode.json` (global)
+- Purpose: Headless project builds/exports
+- Available tools: `export_build`, `export_generate_config`
+- Requires: Godot CLI + export templates; `build_config.json` or inline params
+- Tool prefix: `godot-export_*`
+
 ## Key Config Files
 - `~/.config/opencode/opencode.json` — User-level MCP + model config
 - `opencode.json` — Project-level config (currently minimal, schema-only)

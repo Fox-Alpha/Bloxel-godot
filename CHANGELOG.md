@@ -9,3 +9,4 @@ Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. Die R
 - Add: Godot-AI MCP plugin addon for editor automation e1c7068
 - Add: initial project setup with Godot 4 config and icons 12c93d3
 - Fix: opencode.json MCP command with full uv path and cwd; add CHANGELOG.md b021215
+- Chg: move godot-lsp MCP to user-level config; add docs/GUIDE.md, docs/AI_CONTEXT.md; update README a1ae0d4

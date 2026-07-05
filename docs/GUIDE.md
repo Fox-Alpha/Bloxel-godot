@@ -75,6 +75,37 @@ LSP-Server kommunizieren.
 **Voraussetzung (LSP-Tools):** Godot Editor mit geöffnetem Projekt (Port 6005).
 Format/Lint/Changelog funktionieren auch ohne laufenden Editor.
 
+### godot-export (Lokal – Build-Automation)
+
+Portierung des [godot-export-builder](https://github.com/Fox-Alpha/godot-export-builder) Bash-Scripts.
+Ermöglicht headless Exports direkt aus OpenCode oder CI/CD.
+
+| Tool | Beschreibung |
+|---|---|
+| `export_build` | Komplette Build-Pipeline (Import + Export aller Profile) |
+| `export_generate_config` | Generiert `build_config.json` mit auto-detektierten Werten |
+
+**Konfiguration:** `~/.config/opencode/opencode.json`
+
+```json
+"godot-export": {
+  "type": "local",
+  "command": ["uv", "run", "--script",
+    "/home/buckdi/.config/opencode/tools/godot-export-mcp"],
+  "enabled": true
+}
+```
+
+**Voraussetzung:** Godot CLI & Export-Templates installiert. Export-Presets in Godot Editor konfigurieren (Project → Export).
+
+### tool-prefix Übersicht
+
+| Präfix | Server | Bereich |
+|---|---|---|
+| `godot-ai_*` | godot-ai | Editor-Automation (Scene/Node/Script) |
+| `godot-lsp_*` | godot-lsp | Code-Analyse, Formatierung, Changelog |
+| `godot-export_*` | godot-export | Build & Export
+
 ---
 
 ## Projekt-Struktur

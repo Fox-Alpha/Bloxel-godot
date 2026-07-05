@@ -38,7 +38,7 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 ## Development Setup
 
 Dieses Projekt wird mit [OpenCode](https://opencode.ai) und KI-Assistenz entwickelt.
-Zwei MCP-Server stellen Werkzeuge für Editor-Automation und Code-Analyse bereit.
+Drei MCP-Server stellen Werkzeuge für Editor-Automation, Code-Analyse und Build bereit.
 
 Siehe [docs/GUIDE.md](docs/GUIDE.md) für Einrichtung, Konfiguration und Bedienung.
 Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_CONTEXT.md).
