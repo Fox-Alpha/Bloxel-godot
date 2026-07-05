@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://c1x3h8bbeslr7"]
+
+[ext_resource type="Script" uid="uid://c6vap67lwtw8j" path="res://scripts/game.gd" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://dclobby01" path="res://ui/lobby.tscn" id="2_tmf9j"]
+[ext_resource type="PackedScene" uid="uid://dcsummary01" path="res://ui/summary.tscn" id="3_kvw3b"]
+[ext_resource type="Script" uid="uid://bqsj7yu7vmhok" path="res://scripts/MultiplayerManager.gd" id="4_1bvp3"]
+
+[node name="Main" type="Node2D" unique_id=101951612]
+script = ExtResource("1_ig7tw")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=565940608]
+
+[node name="ScoreLabel" type="Label" parent="UI" unique_id=137907097]
+offset_left = 400.0
+offset_top = 300.0
+offset_right = 401.0
+offset_bottom = 323.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "SCORE: 0"
+
+[node name="LinesLabel" type="Label" parent="UI" unique_id=1574851109]
+offset_left = 400.0
+offset_top = 330.0
+offset_right = 401.0
+offset_bottom = 353.0
+text = "LINES: 0"
+
+[node name="LevelLabel" type="Label" parent="UI" unique_id=365864645]
+offset_left = 400.0
+offset_top = 360.0
+offset_right = 401.0
+offset_bottom = 383.0
+text = "LEVEL: 0"
+
+[node name="GameOverLabel" type="Label" parent="UI" unique_id=2086051768]
+visible = false
+offset_left = 120.0
+offset_top = 300.0
+offset_right = 121.0
+offset_bottom = 323.0
+theme_override_colors/font_color = Color(1, 0.26666668, 0.26666668, 1)
+text = "GAME OVER"
+
+[node name="NextLabel" type="Label" parent="UI" unique_id=1365320619]
+offset_left = 400.0
+offset_top = 80.0
+offset_right = 401.0
+offset_bottom = 103.0
+text = "NEXT"
+
+[node name="OpponentScoreLabel" type="Label" parent="UI" unique_id=1455959512]
+visible = false
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "OPPONENT SCORE: 0"
+
+[node name="OpponentLabel" type="Label" parent="UI" unique_id=1681205567]
+visible = false
+text = "OPPONENT"
+
+[node name="TimeLabel" type="Label" parent="UI" unique_id=330235716]
+offset_left = 400.0
+offset_top = 388.0
+offset_right = 401.0
+offset_bottom = 411.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "TIME: 00:00"
+
+[node name="RoundLabel" type="Label" parent="UI" unique_id=1714785748]
+visible = false
+offset_left = 400.0
+offset_top = 388.0
+offset_right = 401.0
+offset_bottom = 411.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+
+[node name="Overlays" type="CanvasLayer" parent="." unique_id=1507615439]
+
+[node name="Lobby" parent="Overlays" unique_id=423594408 instance=ExtResource("2_tmf9j")]
+layout_mode = 3
+
+[node name="Summary" parent="Overlays" unique_id=619533558 instance=ExtResource("3_kvw3b")]
+layout_mode = 3
+
+[node name="MultiplayerManager" type="Node" parent="." unique_id=278257397]
+script = ExtResource("4_1bvp3")

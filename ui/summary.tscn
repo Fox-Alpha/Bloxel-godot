@@ -1,0 +1,97 @@
+[gd_scene format=3 uid="uid://dcsummary01"]
+
+[ext_resource type="Script" path="res://scripts/summary.gd" id="1"]
+
+[node name="Summary" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1")
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = -250.0
+offset_top = -200.0
+offset_right = 250.0
+offset_bottom = 200.0
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/Margin/VBox"]
+text = "GAME OVER"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 36
+
+[node name="WinnerLabel" type="Label" parent="Panel/Margin/VBox"]
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="RoundLabel" type="Label" parent="Panel/Margin/VBox"]
+text = ""
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="HBox" type="HBoxContainer" parent="Panel/Margin/VBox"]
+
+[node name="LocalStats" type="Label" parent="Panel/Margin/VBox/HBox"]
+size_flags_horizontal = 3
+text = "YOU
+Score: 0
+Lines: 0
+Level: 0
+Time: 00:00
+Pieces: 0"
+
+[node name="OpponentStats" type="Label" parent="Panel/Margin/VBox/HBox"]
+visible = false
+size_flags_horizontal = 3
+horizontal_alignment = 2
+text = "OPPONENT
+Score: 0
+Lines: 0
+Level: 0
+Time: 00:00
+Pieces: 0"
+
+[node name="ButtonHBox" type="HBoxContainer" parent="Panel/Margin/VBox"]
+
+[node name="ReadyButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox"]
+visible = false
+size_flags_horizontal = 4
+text = "Ready"
+
+[node name="OpponentReadyLabel" type="Label" parent="Panel/Margin/VBox/ButtonHBox"]
+visible = false
+size_flags_horizontal = 4
+text = "Opponent ready ✓"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox"]
+text = "Back to Menu"
