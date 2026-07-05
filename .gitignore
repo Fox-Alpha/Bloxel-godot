@@ -4,6 +4,11 @@ android/
 ios/
 *.translation
 export_presets.cfg
+build_config.json
+
+# Build artifacts
+.exports/
+.import.log.txt
 
 # OS
 .DS_Store
