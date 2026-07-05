@@ -22,7 +22,7 @@
     {
       "name": "Windows",
       "type": "export-debug",
-      "platform": "Windows",
+      "platform": "Windows Desktop",
       "output_filename": "",
       "export_path": ""
     }
