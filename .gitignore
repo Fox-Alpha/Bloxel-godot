@@ -1,0 +1,11 @@
+# Godot 4+
+.godot/
+android/
+ios/
+*.translation
+export_presets.cfg
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
