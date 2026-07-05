@@ -35,6 +35,11 @@ Godot 4.7 Tetris clone (GDScript), multiplayer over LAN, developed with OpenCode
 - Available tools: `export_build`, `export_generate_config`
 - Requires: Godot CLI + export templates; `build_config.json` or inline params
 - Tool prefix: `godot-export_*`
+- Interactive flow:
+  1. `export_generate_config show_only=true` → shows project info + all available export presets from export_presets.cfg
+  2. `export_generate_config profile_names=["Linux","Windows"] output_path=build_config.json` → generate config with selected profiles
+  3. `export_build profile=Linux` → build a specific profile
+  `export_build` accepts all parameters inline so no config file is mandatory
 
 ## Key Config Files
 - `~/.config/opencode/opencode.json` — User-level MCP + model config

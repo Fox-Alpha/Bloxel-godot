@@ -4,6 +4,7 @@ Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. Die R
 
 ## 2026-07-05
 
+- Add: godot-export-mcp MCP server (export_build + export_generate_config); register in user-level config; update docs 2149824
 - Add: OpenCode MCP configuration for Godot LSP bridge ae8640a
 - Add: core Tetris game logic, multiplayer, UI scenes and HUD c10cabb
 - Add: Godot-AI MCP plugin addon for editor automation e1c7068

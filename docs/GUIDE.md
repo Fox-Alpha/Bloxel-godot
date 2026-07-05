@@ -81,9 +81,25 @@ Portierung des [godot-export-builder](https://github.com/Fox-Alpha/godot-export-
 Ermöglicht headless Exports direkt aus OpenCode oder CI/CD.
 
 | Tool | Beschreibung |
-|---|---|
+|---|---|---|
 | `export_build` | Komplette Build-Pipeline (Import + Export aller Profile) |
-| `export_generate_config` | Generiert `build_config.json` mit auto-detektierten Werten |
+| `export_generate_config` | Generiert `build_config.json`; zeigt mit `show_only=true` verfügbare Profile an |
+
+**Workflow (interaktiv):**
+
+```bash
+# 1. Projekt-Info + verfügbare Export-Profile anzeigen
+export_generate_config project_dir=. show_only=true
+
+# 2. Config für bestimmte Profile erzeugen
+export_generate_config project_dir=. profile_names=["Linux"] output_path=build_config.json
+
+# 3. Build ausführen
+export_build project_dir=.
+```
+
+`export_build` kann auch komplett ohne `build_config.json` auskommen – alle Parameter
+lassen sich direkt als Tool-Argumente übergeben (z.B. `godot_path`, `profiles`, `export_type`).
 
 **Konfiguration:** `~/.config/opencode/opencode.json`
 
