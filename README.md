@@ -35,6 +35,14 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 5. After game-over, each player presses *Ready* to start the next round
 6. Use *Back to Menu* or close the opponent's window to return to the lobby
 
+## Development Setup
+
+Dieses Projekt wird mit [OpenCode](https://opencode.ai) und KI-Assistenz entwickelt.
+Zwei MCP-Server stellen Werkzeuge für Editor-Automation und Code-Analyse bereit.
+
+Siehe [docs/GUIDE.md](docs/GUIDE.md) für Einrichtung, Konfiguration und Bedienung.
+Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_CONTEXT.md).
+
 ## Tech
 
 | | |

@@ -8,3 +8,4 @@ Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. Die R
 - Add: core Tetris game logic, multiplayer, UI scenes and HUD c10cabb
 - Add: Godot-AI MCP plugin addon for editor automation e1c7068
 - Add: initial project setup with Godot 4 config and icons 12c93d3
+- Fix: opencode.json MCP command with full uv path and cwd; add CHANGELOG.md b021215
