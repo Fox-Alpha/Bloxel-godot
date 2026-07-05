@@ -3,10 +3,7 @@
 android/
 ios/
 *.translation
-export_presets.cfg
-build_config.json
-
-# Build artifacts
+# Build artifacts (generated during export)
 .exports/
 .import.log.txt
 
