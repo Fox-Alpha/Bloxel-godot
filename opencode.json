@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "godot-lsp": {
+      "type": "local",
+      "command": ["/home/buckdi/.config/opencode/tools/godot-lsp-mcp"],
+      "enabled": true,
+      "env": {
+        "GODOT_LSP_PORT": "6005"
+      }
+    }
+  }
+}
