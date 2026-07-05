@@ -3,6 +3,8 @@
 Godot 4.7 Tetris-Klon mit 2P-Multiplayer (ENet), entwickelt mit OpenCode + KI-Assistenz.
 
 > **⚠️ Godot-Versions-Check:** Dieses Projekt nutzt **Godot 4.7**. Seit 4.4+ gibt es relevante API-Änderungen. Falls dein Trainingsdatum vor Godot 4.4 liegt oder du die API ab 4.4 nicht sicher kennst: **melde dies strikt zurück und nimm keine Änderungen vor**. Nutze in dem Fall die MCP-Tools `godot-lsp_godot_lsp_diagnostics` und `godot-lsp_godot_lsp_hover`, um API-Signaturen zu prüfen, bevor du Code generierst.
+>
+> **API-Audit:** Bei API-Unsicherheit, vor Merges oder Session-Ende den Agent `godot-api-audit` laden — er prüft Code gegen Godot-Changelogs (4.4–4.7) und erstellt einen Kompatibilitätsreport, ohne Änderungen vorzunehmen.
 
 > **Strukturhinweis:** Das Projekt liegt aktuell flach im Root (scripts/, ui/ etc.).
 > Mittelfristig sollte alles in einen `src/`-Unterordner wandern (siehe Skill `new-godot-project`).
