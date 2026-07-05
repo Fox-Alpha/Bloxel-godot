@@ -2,7 +2,11 @@
 
 Godot 4.7 Tetris-Klon mit 2P-Multiplayer (ENet), entwickelt mit OpenCode + KI-Assistenz.
 
-## Projektstruktur
+> **Strukturhinweis:** Das Projekt liegt aktuell flach im Root (scripts/, ui/ etc.).
+> Mittelfristig sollte alles in einen `src/`-Unterordner wandern (siehe Skill `new-godot-project`).
+> Umbau ist nicht Teil dieser Session.
+
+## Aktuelle Projektstruktur
 
 ```
 scripts/
