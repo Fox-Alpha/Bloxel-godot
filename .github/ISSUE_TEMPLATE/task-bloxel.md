@@ -1,13 +1,13 @@
 ---
 name: "Task: Copy_Notfalldoku"
-about: "Create a task related to the Copy_Notfalldoku.ps1 script."
-title: "Task: Copy_Notfalldoku.ps1"
-labels: ["task", "powershell", "mf_notfalldoku"]
+about: "Create a task related to the Bloxel Tetris Clone."
+title: "Task: Bloxel"
+labels: ["task"]
 assignees: []
 ---
 
 ## Task
-Describe the specific work item for `Copy_Notfalldoku.ps1`.
+Describe the specific work item for `Bloxel`.
 
 ## Checklist
 - [ ] Describe what needs to be implemented or fixed
