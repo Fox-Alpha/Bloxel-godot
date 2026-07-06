@@ -1,2 +1,2 @@
-# Normalize EOL for all files that Git considers text files.
-* text=auto eol=lf
+# Normalize EOL: committed as LF, checked out as OS-native
+* text=auto
