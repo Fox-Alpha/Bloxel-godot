@@ -1,9 +1,10 @@
 ---
-name: "Task: Copy_Notfalldoku"
-about: "Create a task related to the Bloxel Tetris Clone."
-title: "Task: Bloxel"
-labels: ["task"]
-assignees: []
+name: 'Task: Copy_Notfalldoku'
+about: Create a task related to the Bloxel Tetris Clone.
+title: 'Task: Bloxel'
+labels: ''
+assignees: ''
+
 ---
 
 ## Task

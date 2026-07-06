@@ -1,10 +1,10 @@
 ---
-name: "Refactor: Bloxel"
-about: "Refactor"
-title: "Refactor: Bloxel – [Kurzbeschreibung]"
-labels: ["Refactor"]
-assignees: []
-milestone: ""
+name: 'Refactor: Bloxel'
+about: Refactor
+title: 'Refactor: Bloxel – [Kurzbeschreibung]'
+labels: ''
+assignees: ''
+
 ---
 
 ## Zusammenfassung
