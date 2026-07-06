@@ -1,4 +1,6 @@
-# Bloxel
+# Bloxel<img width="1284" height="807" alt="Bildschirmfoto_Bloxel  PID: 8373 _06-Juli-2026_1805_01" src="https://github.com/user-attachments/assets/b0fb6a7b-75d4-49f5-8c4e-01d68b626c8b" />
+
+> weitere Screenshots im Ordner 'media'
 
 A free, open-source Tetris-like block-stacking game built with **Godot 4**, featuring classic mechanics, ghost piece, next-piece preview, speed progression, and 2-player multiplayer over LAN/internet.
 
