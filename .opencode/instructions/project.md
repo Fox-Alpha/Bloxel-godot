@@ -6,9 +6,6 @@ Godot 4.7 Tetris-Klon mit 2P-Multiplayer (ENet), entwickelt mit OpenCode + KI-As
 >
 > **API-Audit:** Bei API-Unsicherheit, vor Merges oder Session-Ende den Agent `godot-api-audit` laden — er prüft Code gegen Godot-Changelogs (4.4–4.7) und erstellt einen Kompatibilitätsreport, ohne Änderungen vorzunehmen.
 
-> **Strukturhinweis:** Das Projekt liegt aktuell flach im Root (scripts/, ui/ etc.).
-> Mittelfristig sollte alles in einen `src/`-Unterordner wandern (siehe Skill `new-godot-project`).
-> Umbau ist nicht Teil dieser Session.
 
 ## Aktuelle Projektstruktur
 
