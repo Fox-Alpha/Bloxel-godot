@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://dcsummary01"]
 
-[ext_resource type="Script" path="res://scripts/summary.gd" id="1"]
+[ext_resource type="Script" uid="uid://dafd8xfbeq7kw" path="res://scripts/summary.gd" id="1"]
 
-[node name="Summary" type="Control"]
+[node name="Summary" type="Control" unique_id=1717506213]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -11,21 +12,21 @@ grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("1")
 
-[node name="Panel" type="Panel" parent="."]
-anchors_preset = 8
+[node name="Panel" type="Panel" parent="." unique_id=969157362]
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
 offset_left = -250.0
 offset_top = -200.0
 offset_right = 250.0
 offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
-anchors_preset = 15
+[node name="Margin" type="MarginContainer" parent="Panel" unique_id=939479567]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -35,31 +36,30 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 16
 
-[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin" unique_id=1880916191]
+layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="Panel/Margin/VBox"]
+[node name="TitleLabel" type="Label" parent="Panel/Margin/VBox" unique_id=424439554]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
 text = "GAME OVER"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 36
 
-[node name="WinnerLabel" type="Label" parent="Panel/Margin/VBox"]
-text = ""
-horizontal_alignment = 1
+[node name="WinnerLabel" type="Label" parent="Panel/Margin/VBox" unique_id=2061825211]
+layout_mode = 2
 theme_override_font_sizes/font_size = 28
-
-[node name="RoundLabel" type="Label" parent="Panel/Margin/VBox"]
-text = ""
 horizontal_alignment = 1
+
+[node name="RoundLabel" type="Label" parent="Panel/Margin/VBox" unique_id=492285552]
+layout_mode = 2
 theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
 
-[node name="HBox" type="HBoxContainer" parent="Panel/Margin/VBox"]
+[node name="HBox" type="HBoxContainer" parent="Panel/Margin/VBox" unique_id=1195233861]
+layout_mode = 2
 
-[node name="LocalStats" type="Label" parent="Panel/Margin/VBox/HBox"]
+[node name="LocalStats" type="Label" parent="Panel/Margin/VBox/HBox" unique_id=144624844]
+layout_mode = 2
 size_flags_horizontal = 3
 text = "YOU
 Score: 0
@@ -68,30 +68,35 @@ Level: 0
 Time: 00:00
 Pieces: 0"
 
-[node name="OpponentStats" type="Label" parent="Panel/Margin/VBox/HBox"]
+[node name="OpponentStats" type="Label" parent="Panel/Margin/VBox/HBox" unique_id=1633224166]
 visible = false
+layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 2
 text = "OPPONENT
 Score: 0
 Lines: 0
 Level: 0
 Time: 00:00
 Pieces: 0"
+horizontal_alignment = 2
 
-[node name="ButtonHBox" type="HBoxContainer" parent="Panel/Margin/VBox"]
+[node name="ButtonHBox" type="HBoxContainer" parent="Panel/Margin/VBox" unique_id=132001443]
+layout_mode = 2
 
-[node name="ReadyButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox"]
+[node name="ReadyButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox" unique_id=1662343397]
 visible = false
+layout_mode = 2
 size_flags_horizontal = 4
 text = "Ready"
 
-[node name="OpponentReadyLabel" type="Label" parent="Panel/Margin/VBox/ButtonHBox"]
+[node name="OpponentReadyLabel" type="Label" parent="Panel/Margin/VBox/ButtonHBox" unique_id=189655246]
 visible = false
+layout_mode = 2
 size_flags_horizontal = 4
 text = "Opponent ready ✓"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BackButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox"]
+[node name="BackButton" type="Button" parent="Panel/Margin/VBox/ButtonHBox" unique_id=1627973885]
+layout_mode = 2
 text = "Back to Menu"
