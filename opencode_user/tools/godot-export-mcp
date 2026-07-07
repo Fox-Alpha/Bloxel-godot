@@ -1,0 +1,816 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["mcp"]
+# ///
+
+"""
+Godot Export Builder MCP Server
+
+Automates Godot 4.x project exports via headless CLI.
+Port of https://github.com/Fox-Alpha/godot-export-builder
+
+Tools:
+  - export_build:          Full build pipeline from config or inline parameters
+  - export_generate_config: Generate default build_config.json for a project
+"""
+
+import asyncio
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import date
+from pathlib import Path
+from typing import Any
+
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import TextContent, Tool
+
+app = Server("godot-export-mcp")
+
+# ── Logging helpers ──────────────────────────────────────────────────────────
+
+_LOG_PREFIX = {
+    "INFO": "\x1b[32m[INFO]\x1b[0m",
+    "WARN": "\x1b[33m[WARN]\x1b[0m",
+    "ERROR": "\x1b[31m[ERROR]\x1b[0m",
+    "SECTION": "\x1b[34m",
+}
+
+
+def _log(kind: str, msg: str) -> str:
+    pfx = _LOG_PREFIX.get(kind, "")
+    return f"{pfx} {msg}" if kind != "SECTION" else f"\n{pfx}=== {msg} ===\x1b[0m\n"
+
+
+# ── OS helpers ───────────────────────────────────────────────────────────────
+
+OS_MAP = {"Linux": "Linux", "Darwin": "Mac", "Windows": "Windows"}
+OS_SHORT_MAP = {"Linux": "Lin", "Darwin": "Mac", "Windows": "Win"}
+
+
+def _detect_os() -> str:
+    u = os.uname().sysname
+    for pat, val in OS_MAP.items():
+        if pat in u:
+            return val
+    return "Unknown"
+
+
+def _detect_os_short() -> str:
+    u = os.uname().sysname
+    for pat, val in OS_SHORT_MAP.items():
+        if pat in u:
+            return val
+    return "Unk"
+
+
+# ── Godot detection ──────────────────────────────────────────────────────────
+
+_GODOT_CMDS = ["godot", "godot4", "gd4", "godot3", "gd3",
+               "/opt/godot/godot", "/snap/bin/godot"]
+
+
+def _find_godot() -> str | None:
+    for cmd in _GODOT_CMDS:
+        exe = shutil.which(cmd)
+        if exe and os.access(exe, os.X_OK):
+            return os.path.realpath(exe)
+    return None
+
+
+def _resolve_godot_path(path: str) -> str | None:
+    if os.path.isabs(path):
+        return os.path.realpath(path)
+    found = shutil.which(path)
+    if found:
+        return os.path.realpath(found)
+    return os.path.realpath(path) if os.path.isfile(path) else path
+
+
+def _get_godot_version(godot_path: str) -> str | None:
+    try:
+        out = subprocess.check_output([godot_path, "--version"],
+                                      stderr=subprocess.STDOUT, text=True)
+        m = re.search(r"(\d+)\.(\d+)", out.splitlines()[0])
+        return f"{m.group(1)}.{m.group(2)}" if m else None
+    except Exception:
+        return None
+
+
+def _find_project_dir(start: str | None = None) -> str | None:
+    d = os.path.abspath(start or os.getcwd())
+    while True:
+        if os.path.isfile(os.path.join(d, "project.godot")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+# ── Config loading ───────────────────────────────────────────────────────────
+
+_CONFIG_DEFAULTS = {
+    "godot": {"path": "", "version": ""},
+    "build": {
+        "project_name": "DefaultProject",
+        "version_suffix": "dev",
+        "export_root": ".exports",
+        "export_path": "",
+        "output_filename": "{project}_{date}_{os}_{type}",
+        "use_separators": True,
+    },
+    "profiles": [
+        {"name": "Linux", "type": "export-debug", "platform": "x86_64",
+         "output_filename": "", "export_path": ""},
+    ],
+}
+
+
+def _extract_version(raw: str) -> str:
+    m = re.search(r"(\d+\.\d+)", raw)
+    return m.group(1) if m else raw
+
+
+def _load_config(path: str) -> dict:
+    with open(path, encoding="utf-8") as f:
+        cfg: dict = json.load(f)
+    godot = cfg.get("godot", {})
+    build = cfg.get("build", {})
+    profiles = cfg.get("profiles", [])
+    if not profiles:
+        raise ValueError("No profiles defined in config")
+    return {
+        "godot": {"path": godot.get("path", ""), "version": godot.get("version", "")},
+        "build": {
+            "project_name": build.get("project_name", "DefaultProject"),
+            "version_suffix": build.get("version_suffix", "dev"),
+            "export_root": build.get("export_root", ".exports"),
+            "export_path": build.get("export_path", ""),
+            "output_filename": build.get("output_filename", "{project}_{date}_{os}_{type}"),
+            "use_separators": build.get("use_separators", True),
+        },
+        "profiles": profiles,
+    }
+
+
+# ── Filename generation ──────────────────────────────────────────────────────
+
+_EXTENSIONS = {
+    "Windows": ".exe",
+    "Linux": ".x86_64",
+    "Mac": ".x86_64",
+}
+
+
+_PROFILE_OS_MAP = {
+    "Linux": "Lin", "Windows": "Win", "Mac": "Mac", "Web": "Web",
+    "Android": "And", "iOS": "iOS",
+}
+
+
+def _target_os_short(profile_name: str) -> str:
+    for key, val in _PROFILE_OS_MAP.items():
+        if key.lower() in profile_name.lower():
+            return val
+    return _detect_os_short()
+
+
+def _generate_filename(
+    template: str,
+    project_name: str,
+    version_suffix: str,
+    godot_version: str,
+    os_short: str,
+    export_type: str,
+    profile_name: str,
+    platform: str,
+    use_separators: bool,
+) -> str:
+    type_short = export_type.replace("export-", "", 1)
+    subs = {
+        "{project}": project_name,
+        "{version_suffix}": version_suffix,
+        "{platform}": platform,
+        "{os}": _target_os_short(profile_name),
+        "{godot_version}": godot_version or "unknown",
+        "{date}": date.today().strftime("%Y%m%d"),
+        "{type}": type_short,
+    }
+    fn = template
+    for k, v in subs.items():
+        fn = fn.replace(k, str(v))
+    if not use_separators:
+        fn = fn.replace("_", "")
+    fn = re.sub(r"_+", "_", fn)
+    return fn
+
+
+# ── Resolve export path ──────────────────────────────────────────────────────
+
+def _resolve_export_path(
+    export_path: str, export_root: str, project_dir: str
+) -> str:
+    raw = export_path or export_root
+    if os.path.isabs(raw):
+        return raw
+    return os.path.normpath(os.path.join(project_dir, raw))
+
+
+# ── Export execution ─────────────────────────────────────────────────────────
+
+def _run_import(godot_path: str, project_dir: str, log_file: str) -> list[str]:
+    lines: list[str] = []
+    lines.append(_log("SECTION", "Resource Import Phase"))
+    cmd = [godot_path, "--verbose", "--import", "--headless"]
+    lines.append(_log("INFO", f"Command: {' '.join(cmd)}"))
+    try:
+        with open(log_file, "w") as lf:
+            rc = subprocess.run(cmd, cwd=project_dir,
+                                stdout=lf, stderr=subprocess.STDOUT).returncode
+        if rc != 0:
+            with open(log_file) as lf:
+                tail = "".join(lf.readlines()[-20:])
+            lines.append(_log("ERROR", f"Import failed (rc={rc}):\n{tail}"))
+            return lines
+        lines.append(_log("INFO", "Import completed"))
+    except FileNotFoundError:
+        lines.append(_log("ERROR", "Godot executable not found for import"))
+    except Exception as e:
+        lines.append(_log("ERROR", f"Import crashed: {e}"))
+    return lines
+
+
+def _run_export(
+    godot_path: str, project_dir: str,
+    profile_name: str, export_type: str,
+    output_path: str, log_file: str,
+) -> list[str]:
+    lines: list[str] = []
+    lines.append(_log("INFO", f"Exporting profile '{profile_name}' ({export_type})"))
+    export_flag = f"--{export_type}"
+    cmd = [godot_path, "--verbose", "--headless",
+           export_flag, profile_name, "--path", project_dir, output_path]
+    lines.append(_log("INFO", f"Command: {' '.join(cmd)}"))
+    try:
+        with open(log_file, "w") as lf:
+            rc = subprocess.run(cmd, cwd=project_dir,
+                                stdout=lf, stderr=subprocess.STDOUT).returncode
+        if rc != 0:
+            with open(log_file) as lf:
+                tail = "".join(lf.readlines()[-20:])
+            lines.append(_log("ERROR", f"Export failed (rc={rc}):\n{tail}"))
+            return lines
+        lines.append(_log("INFO", "Export completed"))
+    except FileNotFoundError:
+        lines.append(_log("ERROR", "Godot executable not found for export"))
+    except Exception as e:
+        lines.append(_log("ERROR", f"Export crashed: {e}"))
+    return lines
+
+
+# ── Build orchestrator ───────────────────────────────────────────────────────
+
+def _next_version(path: str) -> str:
+    base, ext = os.path.splitext(path)
+    m = re.search(r"_(\d{3})$", base)
+    if m:
+        n = int(m.group(1)) + 1
+        stem = base[:m.start()]
+    else:
+        stem = base
+        n = 1
+    candidate = f"{stem}_{n:03d}{ext}"
+    while os.path.isfile(candidate):
+        n += 1
+        candidate = f"{stem}_{n:03d}{ext}"
+    return candidate
+
+
+def _build_log_path(output_path: str) -> str:
+    base, _ = os.path.splitext(output_path)
+    return base + ".log"
+
+
+def _run_build(cfg: dict, project_dir: str, godot_path: str,
+               godot_version: str, profile_filter: str | None,
+               keep_versions: bool = False) -> list[str]:
+    lines: list[str] = []
+    build = cfg["build"]
+    profiles = cfg["profiles"]
+
+    project_name = build["project_name"]
+    version_suffix = build["version_suffix"]
+    export_root = build["export_root"]
+    export_path = build["export_path"]
+    output_template = build["output_filename"]
+    use_separators = build["use_separators"]
+    os_short = _detect_os_short()
+
+    # Resolve base export directory
+    base_export_dir = _resolve_export_path(export_path, export_root, project_dir)
+    import_log = os.path.join(project_dir, ".import.log.txt")
+
+    # Import once
+    lines += _run_import(godot_path, project_dir, import_log)
+
+    # Process profiles
+    filtered = [p for p in profiles
+                if not profile_filter or p["name"] == profile_filter]
+
+    for p in filtered:
+        p_name: str = p["name"]
+        p_type: str = p.get("type", "export-debug")
+        p_platform: str = p.get("platform", "x86_64")
+        p_filename: str = p.get("output_filename", "") or output_template
+        p_path: str = p.get("export_path", "") or ""
+
+        lines.append(_log("SECTION", f"Profile: {p_name}"))
+        lines.append(_log("INFO", f"Type: {p_type}"))
+        lines.append(_log("INFO", f"Platform: {p_platform}"))
+
+        # Resolve per-profile export dir
+        profile_dir = _resolve_export_path(p_path, export_root, project_dir)
+        profile_dir = os.path.join(profile_dir, p_name)
+        os.makedirs(profile_dir, exist_ok=True)
+        lines.append(_log("INFO", f"Export dir: {profile_dir}"))
+
+        # Generate filename
+        base_fn = _generate_filename(
+            p_filename, project_name, version_suffix,
+            godot_version, os_short, p_type, p_name, p_platform, use_separators,
+        )
+
+        # Suffix separator
+        suffix_sep = "_" if (use_separators and version_suffix
+                             and not version_suffix.startswith("_")) else ""
+
+        # Extension
+        ext = _EXTENSIONS.get(p_name, "")
+        output_name = f"{base_fn}{suffix_sep}{version_suffix}{ext}"
+        output_path = os.path.join(profile_dir, output_name)
+        build_log = _build_log_path(output_path)
+
+        # Version counter when file exists
+        if keep_versions and os.path.isfile(output_path):
+            output_path = _next_version(output_path)
+            build_log = _build_log_path(output_path)
+            lines.append(_log("INFO", f"Output (v2+): {os.path.basename(output_path)}"))
+        elif os.path.isfile(output_path):
+            os.remove(output_path)
+            lines.append(_log("INFO", "Removed old binary"))
+        else:
+            lines.append(_log("INFO", f"Output: {os.path.basename(output_path)}"))
+
+        # Export
+        lines += _run_export(godot_path, project_dir, p_name, p_type,
+                             output_path, build_log)
+
+        # Verify
+        if os.path.isfile(output_path):
+            size = os.path.getsize(output_path)
+            size_hr = f"{size:,} bytes"
+            if size > 1024 * 1024:
+                size_hr = f"{size / 1024 / 1024:.1f} MiB"
+            elif size > 1024:
+                size_hr = f"{size / 1024:.1f} KiB"
+            lines.append(_log("INFO", f"Binary size: {size_hr}"))
+            if p_name in ("Linux", "Mac"):
+                os.chmod(output_path, 0o755)
+                lines.append(_log("INFO", "Made executable"))
+        else:
+            lines.append(_log("ERROR", f"Binary not found: {output_path}"))
+
+    lines.append(_log("SECTION", "Build Complete"))
+    lines.append(_log("INFO", f"Exports in: {base_export_dir}"))
+    return lines
+
+
+# ── Parse export_presets.cfg ─────────────────────────────────────────────────
+
+def _parse_export_presets(project_dir: str) -> list[dict]:
+    path = os.path.join(project_dir, "export_presets.cfg")
+    if not os.path.isfile(path):
+        return []
+    presets: list[dict] = []
+    with open(path, encoding="utf-8") as f:
+        current: dict | None = None
+        for line in f:
+            line = line.strip()
+            m = re.match(r'^\[preset\.(\d+)\]$', line)
+            if m:
+                if current:
+                    presets.append(current)
+                current = {"index": int(m.group(1)), "name": "", "platform": "",
+                           "runnable": False}
+            elif current and line.startswith("name="):
+                val = line.split("=", 1)[1].strip("\"")
+                current["name"] = val
+            elif current and line.startswith("platform="):
+                val = line.split("=", 1)[1].strip("\"")
+                current["platform"] = val
+            elif current and line.startswith("runnable="):
+                current["runnable"] = line.split("=", 1)[1].strip() == "true"
+        if current:
+            presets.append(current)
+    return presets
+
+
+# ── Auto-create export_presets.cfg entries ──────────────────────────────────
+
+_MINIMAL_PRESET_TPL = """\
+[preset.{index}]
+
+name="{name}"
+platform="{platform}"
+runnable=false
+dedicated_server=false
+custom_features=""
+export_filter="all_resources"
+include_filter=""
+exclude_filter=""
+patch_list=""
+encryption_include_filter=""
+encryption_exclude_filter=""
+
+[preset.{index}.options]
+
+custom_template/debug=""
+custom_template/release=""
+binary_format/embed_pck=true
+texture_format/s3tc_bptc=true
+texture_format/etc2_astc=false
+texture_format/no_bptc_fallbacks=true
+codesign/identity=""
+application/icon=""
+application/file_version=""
+application/product_version=""
+application/company_name=""
+application/product_name=""
+application/file_description=""
+application/copyright=""
+application/trademarks=""
+dotnet/include_script_code=true
+"""
+
+
+def _ensure_export_presets(
+    project_dir: str, needed: set[str],
+) -> list[str]:
+    path = os.path.join(project_dir, "export_presets.cfg")
+    existing = {p["name"] for p in _parse_export_presets(project_dir)}
+    missing = needed - existing
+    if not missing:
+        return []
+
+    platform_map = {
+        "Linux": "Linux",
+        "Windows": "Windows Desktop",
+        "Mac": "Mac OSX",
+        "Web": "Web",
+    }
+    created: list[str] = []
+    with open(path, "a" if os.path.isfile(path) else "w") as f:
+        for name in sorted(missing):
+            idx = len(existing) + len(created)
+            platform = platform_map.get(name, name)
+            f.write(_MINIMAL_PRESET_TPL.format(index=idx, name=name, platform=platform))
+            created.append(name)
+    return created
+
+
+# ── Generate default config ──────────────────────────────────────────────────
+
+_OS_PROFILE_MAP = {"Linux": "Linux", "Mac": "Web", "Windows": "Windows", "Unknown": "Windows"}
+
+
+def _generate_config(
+    project_dir: str,
+    godot_path: str | None,
+    profile_names: list[str] | None = None,
+) -> dict:
+    project_name = os.path.basename(os.path.abspath(project_dir))
+    gv = _get_godot_version(godot_path) if godot_path else ""
+
+    # Build profiles from export_presets.cfg or OS default
+    available = _parse_export_presets(project_dir)
+    if profile_names:
+        names_set = set(profile_names)
+        chosen = [p for p in available if p["name"] in names_set]
+        if not chosen:
+            chosen = [{"name": n, "platform": "x86_64", "runnable": False}
+                      for n in profile_names]
+    elif available:
+        os_name = _detect_os()
+        default_name = _OS_PROFILE_MAP.get(os_name, "Windows")
+        chosen = [p for p in available if p["name"] == default_name]
+        if not chosen:
+            chosen = [available[0]]
+    else:
+        os_name = _detect_os()
+        default_name = _OS_PROFILE_MAP.get(os_name, "Windows")
+        chosen = [{"name": default_name, "platform": "x86_64", "runnable": False}]
+
+    profiles = []
+    for p in chosen:
+        profiles.append({
+            "name": p["name"],
+            "type": "export-debug",
+            "platform": p.get("platform", "x86_64"),
+            "output_filename": "",
+            "export_path": "",
+        })
+
+    return {
+        "godot": {"path": godot_path or "", "version": gv},
+        "build": {
+            "project_name": project_name,
+            "version_suffix": "dev",
+            "export_root": ".exports",
+            "export_path": "",
+            "output_filename": "{project}_{date}_{os}_{type}",
+            "use_separators": True,
+        },
+        "profiles": profiles,
+    }
+
+
+# ── MCP tool handlers ────────────────────────────────────────────────────────
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="export_build",
+            description="Build and export a Godot 4.x project using build_config.json or inline parameters. "
+                        "Runs resource import once, then exports each profile.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_dir": {
+                        "type": "string",
+                        "description": "Godot project directory (auto-detected if not set)",
+                    },
+                    "config_path": {
+                        "type": "string",
+                        "description": "Path to build_config.json",
+                    },
+                    "profile": {
+                        "type": "string",
+                        "description": "Only export this profile (by name)",
+                    },
+                    "godot_path": {
+                        "type": "string",
+                        "description": "Path to Godot executable (auto-detected)",
+                    },
+                    "godot_version": {
+                        "type": "string",
+                        "description": "Expected Godot X.Y version (skipped if empty)",
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "Override project name",
+                    },
+                    "version_suffix": {
+                        "type": "string",
+                        "description": "Override version suffix (e.g. 'v1.0')",
+                    },
+                    "export_root": {
+                        "type": "string",
+                        "description": "Override export root directory",
+                    },
+                    "export_type": {
+                        "type": "string",
+                        "description": "Override export type: 'export-debug' or 'export-release'",
+                    },
+                    "profiles": {
+                        "type": "array",
+                        "description": "Inline profiles JSON array (overrides config profiles)",
+                        "items": {"type": "object"},
+                    },
+                    "keep_versions": {
+                        "type": "boolean",
+                        "description": "When true, keep old builds and add _001/_002 counter instead of overwriting",
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="export_generate_config",
+            description="Generate a default build_config.json for a Godot project. "
+                        "Auto-detects project name, Godot path and version, and reads "
+                        "available export presets from export_presets.cfg. "
+                        "Pass profile_names=[\"Linux\",\"Windows\"] to choose which presets to include. "
+                        "Omit profile_names to use the OS-default profile.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_dir": {
+                        "type": "string",
+                        "description": "Godot project directory",
+                    },
+                    "output_path": {
+                        "type": "string",
+                        "description": "Write config to this file (returns JSON if omitted)",
+                    },
+                    "profile_names": {
+                        "type": "array",
+                        "description": "Export preset names to include (from export_presets.cfg). "
+                                       "Show available presets by calling with show_only=true.",
+                        "items": {"type": "string"},
+                    },
+                    "show_only": {
+                        "type": "boolean",
+                        "description": "When true, only show detected project info and available "
+                                       "export presets without writing a config file.",
+                    },
+                },
+                "required": ["project_dir"],
+            },
+        ),
+    ]
+
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    if name == "export_generate_config":
+        return await _handle_generate_config(arguments)
+    elif name == "export_build":
+        return await _handle_build(arguments)
+    else:
+        raise ValueError(f"Unknown tool: {name}")
+
+
+async def _handle_generate_config(args: dict) -> list[TextContent]:
+    project_dir = os.path.abspath(args["project_dir"])
+    if not os.path.isdir(project_dir):
+        return [TextContent(type="text", text=f"Directory not found: {project_dir}")]
+
+    godot_path = _find_godot()
+    gv = _get_godot_version(godot_path) if godot_path else ""
+    project_name = os.path.basename(project_dir)
+
+    # Show available export presets
+    available = _parse_export_presets(project_dir)
+    show_only = args.get("show_only", False)
+
+    info_lines: list[str] = []
+    info_lines.append(f"Projekt: {project_name}")
+    info_lines.append(f"Verzeichnis: {project_dir}")
+    info_lines.append(f"Godot: {godot_path or '(nicht gefunden)'} v{gv or '?'}")
+    info_lines.append("")
+
+    if available:
+        info_lines.append(f"Verfügbare Export-Profile ({len(available)}):")
+        for p in available:
+            flag = " [default]" if p["name"] in _OS_PROFILE_MAP.get(_detect_os(), "") else ""
+            info_lines.append(f"  - {p['name']}  ({p['platform']}, runnable={p['runnable']}){flag}")
+    else:
+        info_lines.append("Keine export_presets.cfg gefunden.")
+        info_lines.append("Erstelle ein Standard-Profil (Linux).")
+        info_lines.append("Lege Export-Profile im Godot Editor an (Projekt → Export).")
+
+    if show_only:
+        return [TextContent(type="text", text="\n".join(info_lines))]
+
+    # Auto-create missing export presets
+    if args.get("profile_names"):
+        needed = set(args["profile_names"])
+    elif available:
+        needed = {p["name"] for p in available}
+    else:
+        needed = {_OS_PROFILE_MAP.get(_detect_os(), "Windows")}
+    created = _ensure_export_presets(project_dir, needed)
+    if created:
+        info_lines.append(f"\nErstellte fehlende Export-Profile in export_presets.cfg: {', '.join(created)}")
+        info_lines.append("(Diese können im Godot Editor angepasst werden.)")
+        # Re-parse so config uses fresh presets
+        available = _parse_export_presets(project_dir)
+
+    # Generate config with user-selected (or default) profiles
+    profile_names = args.get("profile_names", None)
+    cfg = _generate_config(project_dir, godot_path, profile_names)
+    output_path = args.get("output_path", "")
+
+    result = "\n".join(info_lines)
+    result += f"\nGenerierte Profile: {', '.join(p['name'] for p in cfg['profiles'])}"
+    result += "\n\n--- build_config.json ---\n"
+    result += json.dumps(cfg, indent=2)
+
+    if output_path:
+        out = os.path.abspath(output_path)
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(json.dumps(cfg, indent=2) + "\n")
+        result += f"\n\n--- Written to: {out} ---"
+
+    return [TextContent(type="text", text=result)]
+
+
+async def _handle_build(args: dict) -> list[TextContent]:
+    lines: list[str] = []
+
+    # 1. Resolve project directory
+    project_dir = args.get("project_dir", "")
+    if project_dir:
+        project_dir = os.path.abspath(project_dir)
+    else:
+        found = _find_project_dir()
+        if not found:
+            return [TextContent(type="text", text=_log("ERROR", "Could not find project.godot. Pass project_dir explicitly."))]
+        project_dir = found
+
+    if not os.path.isfile(os.path.join(project_dir, "project.godot")):
+        return [TextContent(type="text", text=_log("ERROR", f"project.godot not found in: {project_dir}"))]
+
+    lines.append(_log("INFO", f"Project: {project_dir}"))
+
+    # 2. Load config
+    config_path = args.get("config_path", "")
+    if config_path:
+        config_path = os.path.abspath(config_path)
+    else:
+        config_path = os.path.join(project_dir, "build_config.json")
+
+    if os.path.isfile(config_path):
+        try:
+            cfg = _load_config(config_path)
+            lines.append(_log("INFO", f"Config loaded: {config_path}"))
+        except Exception as e:
+            return [TextContent(type="text", text=_log("ERROR", f"Config error: {e}"))]
+    elif "profiles" in args and args["profiles"]:
+        cfg = {"godot": {"path": "", "version": ""}, "build": dict(_CONFIG_DEFAULTS["build"]),
+               "profiles": args["profiles"]}
+        lines.append(_log("INFO", "Using inline profiles (no config file)"))
+    else:
+        return [TextContent(type="text", text=_log("ERROR", f"Config not found: {config_path}. "
+                            "Pass config_path or inline profiles."))]
+
+    # 3. Merge overrides into config
+    if args.get("godot_path"):
+        cfg["godot"]["path"] = args["godot_path"]
+    if args.get("godot_version"):
+        cfg["godot"]["version"] = args["godot_version"]
+    if args.get("project_name"):
+        cfg["build"]["project_name"] = args["project_name"]
+    if args.get("version_suffix"):
+        cfg["build"]["version_suffix"] = args["version_suffix"]
+    if args.get("export_root"):
+        cfg["build"]["export_root"] = args["export_root"]
+    if args.get("export_type"):
+        for p in cfg["profiles"]:
+            p["type"] = args["export_type"]
+
+    # 4. Find Godot
+    godot_path = cfg["godot"]["path"] or _find_godot()
+    if not godot_path:
+        return [TextContent(type="text", text=_log("ERROR", "Godot executable not found. "
+                            "Set godot_path or install Godot in PATH."))]
+    resolved = _resolve_godot_path(godot_path)
+    if not resolved or not os.access(resolved, os.X_OK):
+        return [TextContent(type="text", text=_log("ERROR", f"Godot not found/executable: {godot_path}"))]
+    godot_path = resolved
+    lines.append(_log("INFO", f"Godot: {godot_path}"))
+
+    # 5. Verify version
+    gv_config = _extract_version(cfg["godot"]["version"]) if cfg["godot"]["version"] else ""
+    if gv_config:
+        actual = _get_godot_version(godot_path)
+        if actual is None:
+            lines.append(_log("WARN", "Could not determine Godot version"))
+        elif actual != gv_config:
+            return [TextContent(type="text", text=_log("ERROR",
+                                f"Godot version mismatch: expected {gv_config}, got {actual}"))]
+        else:
+            lines.append(_log("INFO", f"Godot version verified: {actual}"))
+    actual_version = _get_godot_version(godot_path) or gv_config
+
+    # 6. Ensure export_presets.cfg exists for all requested profiles
+    needed = set(p["name"] for p in cfg["profiles"])
+    if args.get("profile"):
+        needed = {args["profile"]}
+    created = _ensure_export_presets(project_dir, needed)
+    if created:
+        lines.append(_log("INFO", f"Auto-created export presets: {', '.join(created)}"))
+
+    # 7. Run build
+    profile_filter = args.get("profile", "")
+    keep_versions = args.get("keep_versions", False)
+    build_lines = _run_build(cfg, project_dir, godot_path, actual_version, profile_filter, keep_versions)
+    lines += build_lines
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+async def main() -> None:
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(read_stream, write_stream, app.create_initialization_options())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

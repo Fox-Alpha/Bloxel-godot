@@ -1,0 +1,75 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"model": "ollama/codestral",
+	"provider": {
+		"llama": {
+			"models": {
+				"llama3": {
+					"_launch": true,
+					"name": "llama-3-8b-instruct-coder-q4_k_m.gguf"
+				}
+			},
+			"name": "Llama",
+			"npm": "@ai-sdk/openai-compatible",
+			"options": {
+				"baseURL": "http://127.0.0.1:8080/v1"
+			}
+		}
+	},
+	"instructions": [
+		"instructions/communication.md",
+		"instructions/workflow.md"
+	],
+	"skills": {
+		"paths": ["~/.config/opencode/skills"]
+	},
+	"permission": {
+		"bash": {
+			"*": "ask",
+			"ls *": "allow",
+			"cat *": "allow",
+			"find *": "allow",
+			"grep *": "allow",
+			"rg *": "allow",
+			"mkdir *": "allow",
+			"cp *": "allow",
+			"touch *": "allow",
+			"chmod *": "allow",
+			"echo *": "allow",
+			"head *": "allow",
+			"tail *": "allow",
+			"sort *": "allow",
+			"wc *": "allow",
+			"which *": "allow",
+			"git *": "allow",
+			"git merge *": "ask",
+			"git push *": "ask",
+			"git reset *": "deny",
+			"git clean *": "deny",
+			"git rebase *": "deny",
+			"rm *": "ask",
+			"mv *": "ask",
+			"sudo *": "deny"
+		}
+	},
+	"mcp": {
+		"godot-ai": {
+			"url": "http://127.0.0.1:8000/mcp",
+			"type": "remote",
+			"enabled": true
+		},
+		"godot-lsp": {
+			"type": "local",
+			"command": ["/home/buckdi/.local/bin/uv", "run", "--script", "/home/buckdi/.config/opencode/tools/godot-lsp-mcp"],
+			"enabled": true,
+			"env": {
+				"GODOT_LSP_PORT": "6005"
+			}
+		},
+		"godot-export": {
+			"type": "local",
+			"command": ["/home/buckdi/.local/bin/uv", "run", "--script", "/home/buckdi/.config/opencode/tools/godot-export-mcp"],
+			"enabled": true
+		}
+	}
+}

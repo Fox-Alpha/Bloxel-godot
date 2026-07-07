@@ -1,0 +1,738 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["mcp"]
+# ///
+
+import asyncio
+import json
+import os
+import re
+import shutil
+import socket
+import sys
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from typing import Any
+
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import (
+    ClientResult,
+    EmptyResult,
+    ErrorData,
+    INVALID_PARAMS,
+    INTERNAL_ERROR,
+    JSONRPCError,
+    METHOD_NOT_FOUND,
+    ServerResult,
+    TextContent,
+    Tool,
+)
+
+# ── LSP client ──────────────────────────────────────────────────────────────
+
+FORMATTER_BIN = shutil.which("gdscript-formatter")
+LSP_PORTS = [6005, 6007, 6008]
+LSP_HOST = os.environ.get("GODOT_LSP_HOST", "127.0.0.1")
+
+
+class LspError(Exception):
+    def __init__(self, code: int, message: str, data: Any = None):
+        self.code = code
+        self.message = message
+        self.data = data
+
+
+class LspClient:
+    """Raw TCP connection to Godot's GDScript LSP server."""
+
+    RECONNECT_DELAY = 3.0
+    MAX_RETRIES = 60  # keep trying for ~3 minutes
+
+    def __init__(self):
+        self.sock: socket.socket | None = None
+        self._buf = b""
+        self._req_id = 0
+        self._pending: dict[int, asyncio.Future] = {}
+        self._reader_task: asyncio.Task | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._diag_futures: dict[str, asyncio.Future] = {}
+        self._opened_uris: set[str] = set()
+        self._connected = False
+
+    async def connect(self) -> None:
+        await self._try_connect_socket()
+        self._loop = asyncio.get_event_loop()
+        self._reader_task = asyncio.create_task(self._read_loop())
+        await self._send_initialize()
+
+    async def _try_connect_socket(self) -> None:
+        for port in LSP_PORTS:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(2.0)
+                s.connect((LSP_HOST, port))
+                s.settimeout(None)
+                s.setblocking(False)
+                self.sock = s
+                self._connected = True
+                print(f"LSP: connected on port {port}", file=sys.stderr)
+                return
+            except (OSError, ConnectionRefusedError):
+                continue
+        self._connected = False
+        raise ConnectionError(
+            f"Could not connect to Godot LSP on ports {LSP_PORTS}"
+        )
+
+    async def _send_initialize(self) -> None:
+        root = f"file://{os.getcwd()}"
+        caps = await self._request("initialize", {
+            "processId": None,
+            "rootPath": os.getcwd(),
+            "rootUri": root,
+            "clientInfo": {"name": "godot-lsp-mcp", "version": "1.0.0"},
+            "capabilities": {},
+        })
+        await self._notify("initialized", {})
+        print(
+            f"LSP: initialized (server: {caps.get('serverInfo', {})})",
+            file=sys.stderr,
+        )
+
+    async def _ensure_connected(self) -> None:
+        if self._connected:
+            return
+        print("LSP: reconnecting...", file=sys.stderr)
+        self._opened_uris.clear()
+        if self._reader_task and not self._reader_task.done():
+            self._reader_task.cancel()
+        for _ in range(self.MAX_RETRIES):
+            await asyncio.sleep(self.RECONNECT_DELAY)
+            try:
+                await self._try_connect_socket()
+                self._reader_task = asyncio.create_task(self._read_loop())
+                await self._send_initialize()
+                print("LSP: reconnected", file=sys.stderr)
+                return
+            except (OSError, ConnectionError):
+                continue
+        raise ConnectionError("LSP: could not reconnect to Godot LSP")
+
+    async def close(self) -> None:
+        if self._reader_task:
+            self._reader_task.cancel()
+        if self.sock:
+            try:
+                self.sock.close()
+            except OSError:
+                pass
+
+    # ── LSP convenience methods ──────────────────────────────────────────
+
+    async def _ensure_open(self, path: str, language: str = "gdscript") -> str:
+        uri = self._path_to_uri(path)
+        if uri in self._opened_uris:
+            return uri
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        await self._notify("textDocument/didOpen", {
+            "textDocument": {
+                "uri": uri,
+                "languageId": language,
+                "version": 1,
+                "text": text,
+            }
+        })
+        self._opened_uris.add(uri)
+        return uri
+
+    async def open_document(self, path: str, language: str = "gdscript") -> None:
+        await self._ensure_open(path, language)
+
+    async def get_diagnostics(self, path: str) -> list[dict]:
+        uri = await self._ensure_open(path)
+        fut = self._loop.create_future()
+        self._diag_futures[uri] = fut
+        try:
+            diags = await asyncio.wait_for(fut, timeout=5.0)
+            return diags
+        except asyncio.TimeoutError:
+            return []
+        except Exception:
+            return []
+
+    async def get_document_symbols(self, path: str) -> list[dict]:
+        uri = self._path_to_uri(path)
+        result = await self._request("textDocument/documentSymbol", {
+            "textDocument": {"uri": uri},
+        })
+        return result if isinstance(result, list) else []
+
+    async def get_hover(self, path: str, line: int, col: int) -> dict | None:
+        uri = self._path_to_uri(path)
+        result = await self._request("textDocument/hover", {
+            "textDocument": {"uri": uri},
+            "position": {"line": line, "character": col},
+        })
+        return result if result else None
+
+    async def get_completions(
+        self, path: str, line: int, col: int
+    ) -> list[dict]:
+        uri = self._path_to_uri(path)
+        result = await self._request("textDocument/completion", {
+            "textDocument": {"uri": uri},
+            "position": {"line": line, "character": col},
+            "context": {"triggerKind": 1},
+        })
+        if isinstance(result, dict):
+            return result.get("items", result.get("itemDefaults", []))
+        return result if isinstance(result, list) else []
+
+    # ── Internal LSP messaging ───────────────────────────────────────────
+
+    async def _request(self, method: str, params: dict) -> Any:
+        self._req_id += 1
+        req_id = self._req_id
+        fut = self._loop.create_future()
+        self._pending[req_id] = fut
+        await self._send({"jsonrpc": "2.0", "id": req_id, "method": method, "params": params})
+        return await fut
+
+    async def _notify(self, method: str, params: dict) -> None:
+        await self._send({"jsonrpc": "2.0", "method": method, "params": params})
+
+    async def _send(self, msg: dict) -> None:
+        await self._ensure_connected()
+        data = json.dumps(msg, ensure_ascii=False)
+        framed = f"Content-Length: {len(data.encode())}\r\n\r\n{data}".encode()
+        try:
+            await self._loop.sock_sendall(self.sock, framed)
+        except (OSError, ConnectionError) as e:
+            self._connected = False
+            raise ConnectionError(f"LSP send failed: {e}")
+
+    async def _read_loop(self) -> None:
+        while True:
+            try:
+                data = await self._loop.sock_recv(self.sock, 65536)
+                if not data:
+                    break
+                self._buf += data
+                self._process_buf()
+            except (OSError, ConnectionError) as e:
+                print(f"LSP: connection error: {e}", file=sys.stderr)
+                break
+        self._connected = False
+        print("LSP: connection lost", file=sys.stderr)
+
+    def _process_buf(self) -> None:
+        while True:
+            header_end = self._buf.find(b"\r\n\r\n")
+            if header_end == -1:
+                break
+            header = self._buf[:header_end].decode(errors="replace")
+            length = self._parse_content_length(header)
+            if length is None or length <= 0:
+                self._buf = self._buf[header_end + 4 :]
+                continue
+            body_start = header_end + 4
+            body_end = body_start + length
+            if len(self._buf) < body_end:
+                break
+            body = self._buf[body_start:body_end]
+            self._buf = self._buf[body_end:]
+            self._handle_message(body)
+
+    def _parse_content_length(self, header: str) -> int | None:
+        for line in header.split("\n"):
+            line = line.strip()
+            if line.lower().startswith("content-length:"):
+                try:
+                    return int(line.split(":")[1].strip())
+                except (ValueError, IndexError):
+                    return None
+        return None
+
+    def _handle_message(self, raw: bytes) -> None:
+        try:
+            msg = json.loads(raw)
+        except json.JSONDecodeError:
+            return
+
+        if isinstance(msg, dict):
+            # Push diagnostics notification
+            if msg.get("method") == "textDocument/publishDiagnostics":
+                uri = msg.get("params", {}).get("uri", "")
+                if uri in self._diag_futures:
+                    fut = self._diag_futures.pop(uri)
+                    if not fut.done():
+                        fut.set_result(msg["params"].get("diagnostics", []))
+                return
+
+            if "id" in msg and msg["id"] is not None:
+                req_id = msg["id"]
+                fut = self._pending.pop(req_id, None)
+                if fut and not fut.done():
+                    if "error" in msg:
+                        err = msg["error"]
+                        fut.set_exception(
+                            LspError(err.get("code", -1), err.get("message", ""))
+                        )
+                    else:
+                        fut.set_result(msg.get("result"))
+
+    @staticmethod
+    def _path_to_uri(path: str) -> str:
+        abs_path = os.path.abspath(path)
+        return f"file://{abs_path}"
+
+
+# ── MCP server ──────────────────────────────────────────────────────────────
+
+lsp = LspClient()
+app = Server("godot-lsp-mcp")
+
+
+def _fmt_symbol(sym: dict, indent: str = "") -> str:
+    name = sym.get("name", "?")
+    kind = sym.get("kind", 0)
+    kind_names = {
+        1: "File", 2: "Module", 3: "Namespace", 4: "Package", 5: "Class",
+        6: "Method", 7: "Property", 8: "Field", 9: "Constructor",
+        10: "Enum", 11: "Interface", 12: "Function", 13: "Variable",
+        14: "Constant", 15: "String", 16: "Number", 17: "Boolean",
+        18: "Array", 19: "Object", 20: "Key", 21: "Null",
+        22: "EnumMember", 23: "Struct", 24: "Event", 25: "Operator",
+        26: "TypeParameter",
+    }
+    kind_str = kind_names.get(kind, f"kind_{kind}")
+    result = f"{indent}{kind_str} `{name}`"
+    if sym.get("detail"):
+        result += f"  ({sym['detail']})"
+    result += f"  [L{sym.get('range', {}).get('start', {}).get('line', '?')}]"
+    if sym.get("children"):
+        for child in sym["children"]:
+            result += "\n" + _fmt_symbol(child, indent + "  ")
+    return result
+
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="godot_lsp_diagnostics",
+            description="Get GDScript diagnostics (errors, warnings, hints) for a file from Godot's LSP",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to the .gd file",
+                    }
+                },
+                "required": ["path"],
+            },
+        ),
+        Tool(
+            name="godot_lsp_symbols",
+            description="Get document symbols (functions, variables, classes) for a GDScript file",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to the .gd file",
+                    }
+                },
+                "required": ["path"],
+            },
+        ),
+        Tool(
+            name="godot_lsp_hover",
+            description="Get type info and documentation for a symbol at a position in a GDScript file",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to the .gd file",
+                    },
+                    "line": {
+                        "type": "integer",
+                        "description": "0-based line number",
+                    },
+                    "column": {
+                        "type": "integer",
+                        "description": "0-based column number",
+                    },
+                },
+                "required": ["path", "line", "column"],
+            },
+        ),
+        Tool(
+            name="gdscript_format",
+            description="Format a GDScript file according to the official style guide (tabs, ordering). Pass check_only=True to preview without modifying.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to the .gd file",
+                    },
+                    "check_only": {
+                        "type": "boolean",
+                        "description": "If true, only check formatting without modifying the file",
+                        "default": False,
+                    },
+                },
+                "required": ["path"],
+            },
+        ),
+        Tool(
+            name="gdscript_lint",
+            description="Lint a GDScript file for style and convention issues",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Absolute path to the .gd file",
+                    },
+                    "max_line_length": {
+                        "type": "integer",
+                        "description": "Maximum line length allowed (default: 100)",
+                        "default": 100,
+                    },
+                },
+                "required": ["path"],
+            },
+        ),
+        Tool(
+            name="generate_changelog",
+            description="Generate a CHANGELOG.md from git history. Run from within a git repository.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "repo_path": {
+                        "type": "string",
+                        "description": "Path to the git repository (default: current directory)",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "File or directory filter; '-' for full repo (default)",
+                    },
+                    "output": {
+                        "type": "string",
+                        "description": "Output path for the markdown file",
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Branch or tag ref",
+                    },
+                    "since": {
+                        "type": "string",
+                        "description": "Commits after date (2026-01-01) or from tag (v1.0.0)",
+                    },
+                    "until": {
+                        "type": "string",
+                        "description": "Commits until date or tag",
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Custom title for the changelog",
+                    },
+                },
+            },
+        ),
+    ]
+
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    path = os.path.abspath(arguments.get("path", ""))
+
+    if name == "generate_changelog":
+        return await _handle_changelog(arguments)
+
+    if name in ("gdscript_format", "gdscript_lint"):
+        if not os.path.exists(path):
+            return [TextContent(type="text", text=f"File not found: {path}")]
+        if name == "gdscript_format":
+            return await _handle_format(path, arguments.get("check_only", False))
+        elif name == "gdscript_lint":
+            return await _handle_lint(path, arguments.get("max_line_length", 100))
+
+    if not os.path.exists(path):
+        return [TextContent(type="text", text=f"File not found: {path}")]
+
+    try:
+        await lsp._ensure_connected()
+        await lsp.open_document(path)
+    except ConnectionError as e:
+        return [TextContent(type="text", text=f"LSP nicht verbunden. Stelle sicher, dass der Godot Editor läuft und das Projekt geöffnet ist.\n\nFehler: {e}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Failed to open document in LSP: {e}")]
+
+    if name == "godot_lsp_diagnostics":
+        return await _handle_diagnostics(path)
+    elif name == "godot_lsp_symbols":
+        return await _handle_symbols(path)
+    elif name == "godot_lsp_hover":
+        return await _handle_hover(path, arguments)
+    else:
+        raise ValueError(f"Unknown tool: {name}")
+
+
+async def _handle_diagnostics(path: str) -> list[TextContent]:
+    try:
+        diags = await lsp.get_diagnostics(path)
+    except Exception as e:
+        return [TextContent(type="text", text=f"LSP diagnostics error: {e}")]
+
+    if not diags:
+        return [TextContent(type="text", text="No diagnostics found.")]
+
+    sev_names = {1: "ERROR", 2: "WARNING", 3: "INFO", 4: "HINT"}
+    lines = [f"Diagnostics for {path}:"]
+    for d in diags:
+        sev = sev_names.get(d.get("severity", 0), "?")
+        rng = d.get("range", {})
+        start = rng.get("start", {})
+        loc = f"L{start.get('line', '?')}:{start.get('character', '?')}"
+        msg = d.get("message", "")
+        src = d.get("source", "")
+        src_str = f" [{src}]" if src else ""
+        lines.append(f"  [{sev}] {loc}{src_str}: {msg}")
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+async def _handle_symbols(path: str) -> list[TextContent]:
+    try:
+        symbols = await lsp.get_document_symbols(path)
+    except Exception as e:
+        return [TextContent(type="text", text=f"LSP symbols error: {e}")]
+
+    if not symbols:
+        return [TextContent(type="text", text="No symbols found.")]
+
+    result = "\n".join(_fmt_symbol(s) for s in symbols)
+    return [TextContent(type="text", text=f"Symbols for {path}:\n{result}")]
+
+
+async def _handle_hover(path: str, args: dict) -> list[TextContent]:
+    line = args["line"]
+    col = args["column"]
+    try:
+        hover = await lsp.get_hover(path, line, col)
+    except Exception as e:
+        return [TextContent(type="text", text=f"LSP hover error: {e}")]
+
+    if not hover:
+        return [TextContent(type="text", text="No hover info available at this position.")]
+
+    contents = hover.get("contents", {})
+    if isinstance(contents, str):
+        text = contents
+    elif isinstance(contents, dict):
+        text = contents.get("value", json.dumps(contents, indent=2))
+    elif isinstance(contents, list):
+        parts = []
+        for c in contents:
+            if isinstance(c, str):
+                parts.append(c)
+            elif isinstance(c, dict):
+                parts.append(c.get("value", json.dumps(c)))
+        text = "\n".join(parts)
+    else:
+        text = json.dumps(contents, indent=2)
+
+    rng = hover.get("range", {})
+    rng_str = ""
+    if rng:
+        s = rng.get("start", {})
+        e = rng.get("end", {})
+        rng_str = f" [L{s.get('line')}:{s.get('character')} - L{e.get('line')}:{e.get('character')}]"
+
+    return [
+        TextContent(
+            type="text",
+            text=f"Hover at L{line}:{col}{rng_str}:\n{text}",
+        )
+    ]
+
+
+def _check_formatter() -> str | None:
+    if not FORMATTER_BIN:
+        return (
+            "`gdscript-formatter` not found in PATH.\n"
+            "Install it from github.com/Fox-Alpha/godot-dev-toolkit or place the binary in PATH."
+        )
+    return None
+
+
+async def _run_cli(args: list[str], cwd: str | None = None) -> tuple[int, str, str]:
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        cwd=cwd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    return proc.returncode or 0, stdout.decode(), stderr.decode()
+
+
+async def _handle_format(path: str, check_only: bool) -> list[TextContent]:
+    err = _check_formatter()
+    if err:
+        return [TextContent(type="text", text=err)]
+
+    if check_only:
+        rc, out, err = await _run_cli(
+            [FORMATTER_BIN, "--check", path]
+        )
+        if rc == 0:
+            return [TextContent(type="text", text="File is properly formatted.")]
+        rc2, out2, _ = await _run_cli(
+            [FORMATTER_BIN, "--stdout", path]
+        )
+        return [TextContent(
+            type="text",
+            text=f"File is NOT formatted.\n\nExpected formatting:\n{out2}",
+        )]
+    else:
+        rc, _, err = await _run_cli(
+            [FORMATTER_BIN, "--reorder-code", "-s", path]
+        )
+        if rc != 0:
+            return [TextContent(type="text", text=f"Format error:\n{err}")]
+        return [TextContent(type="text", text=f"Formatted: {path}")]
+
+
+async def _handle_lint(path: str, max_line_length: int) -> list[TextContent]:
+    err = _check_formatter()
+    if err:
+        return [TextContent(type="text", text=err)]
+
+    rc, out, err = await _run_cli(
+        [FORMATTER_BIN, "lint", "--max-line-length", str(max_line_length), "--pretty", path]
+    )
+    if not out and not err:
+        return [TextContent(type="text", text="No lint issues found.")]
+    if out:
+        return [TextContent(type="text", text=out)]
+    return [TextContent(type="text", text=err)]
+
+
+PREFIX_ORDER = ["Add", "Fix", "Upd", "Chg", "Del", "Docs", "Ref", "Mve", "Rem", "Ren"]
+
+
+def _detect_prefix(msg: str) -> tuple[str, str]:
+    for p in PREFIX_ORDER:
+        if msg.startswith(p + ":") or msg.startswith(p + " "):
+            return p, msg[len(p) + 1:].strip()
+    return "", msg
+
+
+async def _handle_changelog(args: dict) -> list[TextContent]:
+    repo_path = args.get("repo_path", "")
+    path = args.get("path", "-")
+    branch = args.get("branch", "")
+    since = args.get("since", "")
+    until_arg = args.get("until", "")
+    title = args.get("title", "")
+    cwd = os.path.abspath(repo_path) if repo_path else None
+
+    cmd = ["git", "log", "--pretty=format:%ad|%h|%s", "--date=short"]
+    if branch:
+        cmd.append(branch)
+    if since:
+        cmd += [f"--since={since}"] if re.match(r"^\d{4}-\d{2}-\d{2}$", since) else [f"{since}..HEAD"]
+    if until_arg:
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", until_arg):
+            cmd += [f"--until={until_arg}"]
+        elif since and not re.match(r"^\d{4}-\d{2}-\d{2}$", since):
+            cmd = [f"{since}..{until_arg}"]
+        else:
+            cmd.append(until_arg)
+    if path and path != "-":
+        cmd += ["--", path]
+
+    rc, stdout, stderr = await _run_cli(cmd, cwd=cwd)
+    if rc != 0 or not stdout.strip():
+        return [TextContent(type="text", text=f"No git history found for '{path or 'repo'}'.")]
+
+    entries: list[dict] = []
+    for line in stdout.splitlines():
+        parts = line.split("|", 2)
+        if len(parts) >= 3:
+            entries.append({"date": parts[0], "hash": parts[1], "msg": parts[2]})
+
+    groups: dict[str, list[dict]] = {}
+    for e in entries:
+        groups.setdefault(e["date"], []).append(e)
+
+    remote = await _get_remote_url(cwd=cwd)
+    repo_dir = cwd or os.getcwd()
+    repo_name = os.path.basename(repo_dir)
+
+    if not title:
+        br = branch or await _get_current_branch(cwd=cwd)
+        title = f"{repo_name} ({br})" if br else repo_name
+
+    lines = [f"# {title}", ""]
+    lines.append(
+        "Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. "
+        "Die Reihenfolge der Typen ist Add → Fix → Upd → Chg → Del → Docs → Ref → Mve → Rem → Ren → sonstige."
+    )
+    lines.append("")
+
+    for date, ents in groups.items():
+        lines.append(f"## {date}")
+        lines.append("")
+        sorted_ents = sorted(
+            ents,
+            key=lambda e: (
+                PREFIX_ORDER.index(_detect_prefix(e["msg"])[0])
+                if _detect_prefix(e["msg"])[0] in PREFIX_ORDER
+                else len(PREFIX_ORDER)
+            ),
+        )
+        for e in sorted_ents:
+            msg = e["msg"]
+            link = f" [{e['hash']}]({remote}/commit/{e['hash']})" if remote else f" {e['hash']}"
+            lines.append(f"- {msg}{link}")
+        lines.append("")
+
+    output_path = args.get("output", "")
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+        result = "\n".join(lines) + f"\n\n--- Written to: {output_path} ---"
+    else:
+        result = "\n".join(lines)
+
+    return [TextContent(type="text", text=result)]
+
+
+async def _get_remote_url(*, cwd: str | None = None) -> str:
+    rc, out, _ = await _run_cli(["git", "config", "--get", "remote.origin.url"], cwd=cwd)
+    return out.strip() if rc == 0 else ""
+
+
+async def _get_current_branch(*, cwd: str | None = None) -> str:
+    rc, out, _ = await _run_cli(["git", "branch", "--show-current"], cwd=cwd)
+    return out.strip() if rc == 0 else ""
+
+
+async def main() -> None:
+    async with stdio_server() as (read_stream, write_stream):
+        await app.run(read_stream, write_stream, app.create_initialization_options())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
