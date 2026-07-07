@@ -4,6 +4,9 @@ android/
 ios/
 *.translation
 
+# Disabled addons
+src/addons/.disabled/
+
 # Export builds
 .exports/
 

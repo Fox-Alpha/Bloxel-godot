@@ -1,6 +1,0 @@
-# Normalize EOL for all files that Git considers text files.
-* text=auto eol=lf
-
-# Only include addons/log when downloading from the Asset Library.
-/**             export-ignore
-/addons/log/    !export-ignore
