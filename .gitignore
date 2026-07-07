@@ -5,7 +5,8 @@ ios/
 *.translation
 
 # Disabled addons
-src/addons/.disabled/
+src/addons/.disabled/**
+!.gdignore
 
 # Export builds
 .exports/
