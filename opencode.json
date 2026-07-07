@@ -7,7 +7,45 @@
   ],
   "permission": {
     "external_directory": {
-      "~/.config/opencode/**": "allow"
+      "~/.config/opencode/**": "allow",
+      "/**": "deny"
+    },
+    "edit": {
+      "~/.config/opencode/**": "deny",
+      "~/.config/opencode/opencode.json": "allow"
+    },
+    "glob": {
+      "~/.config/opencode/**" : "allow"
+    },
+    "bash": {
+      "*": "ask",
+      "grep *": "allow"
+    }
+  },
+  "mcp": {
+    "godot-ai": {
+      "url": "http://127.0.0.1:8000/mcp",
+      "type": "remote",
+      "enabled": true
+    },
+    "ziva-godot": {
+      "type": "local",
+      "command": [
+        "/home/buckdi/.local/share/ziva-local/bin/zivacode",
+        "--mcp-bridge",
+        "--godot-bin",
+        "/home/buckdi/Projekte/Godot/Engine/4.7_stable/Godot_v4.7-stable_linux.x86_64",
+        "--upstream",
+        "http://localhost:7012/api/mcp"
+      ],
+      "enabled": true
+    }
+  },
+  "agent": {},
+  "formatter": {
+    "gdscript-formatter": {
+      "command": ["gd4formatter", "--safe", "$FILE"],
+      "extensions": [".gd"]
     }
   }
 }
