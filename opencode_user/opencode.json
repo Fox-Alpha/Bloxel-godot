@@ -1,21 +1,5 @@
 {
 	"$schema": "https://opencode.ai/config.json",
-	"model": "ollama/codestral",
-	"provider": {
-		"llama": {
-			"models": {
-				"llama3": {
-					"_launch": true,
-					"name": "llama-3-8b-instruct-coder-q4_k_m.gguf"
-				}
-			},
-			"name": "Llama",
-			"npm": "@ai-sdk/openai-compatible",
-			"options": {
-				"baseURL": "http://127.0.0.1:8080/v1"
-			}
-		}
-	},
 	"instructions": [
 		"instructions/communication.md",
 		"instructions/workflow.md"
