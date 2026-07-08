@@ -46,7 +46,7 @@
 			"type": "local",
 			"command": ["/home/buckdi/.local/bin/uv", "run", "--script", "/home/buckdi/.config/opencode/tools/godot-lsp-mcp"],
 			"enabled": true,
-			"env": {
+			"environment": {
 				"GODOT_LSP_PORT": "6005"
 			}
 		},
