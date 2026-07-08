@@ -40,7 +40,7 @@ description: Setup a new Godot project with OpenCode support. Creates repo struc
 ### 1. Verzeichnisse anlegen
 
 ```bash
-mkdir -p {project-name}/{src/{assets,scenes,scripts,addons},assets/{sprites,sounds,fonts},docs,reference,.exports,.opencode/{instructions,agents,files}}
+mkdir -p {project-name}/{src/{assets,scenes,scripts,addons},assets/{sprites,sounds,fonts},docs,reference,.exports,.opencode/{instructions,agents,files},.submodule/{addons,andere}}
 ```
 - Erzeuge in allen Ordnern eine '.GITKEEP' um die Ordner Struktur im Repository zu erzeugen
 
@@ -65,6 +65,10 @@ cp "$TEMPLATES/project.md" "$PROJECT/.opencode/instructions/project.md"
 sed -i "s/{PROJECT_NAME}/{project-name}/g" "$PROJECT/.opencode/instructions/project.md"
 sed -i "s/{PROJECT_DESCRIPTION}/{project-description}/g" "$PROJECT/.opencode/instructions/project.md"
 ```
+### 2.1 Godot Addons hinzufügen
+- Frage den User ob Godot Addons hinzugefügt werden soll. Direkt oder als Submodule
+  - Direkt, dann in src/addons/
+  - Als SubModule, durch angabe der Repository Adresse in die Git Struktur aufnehmen und im Ordner: '$PROJECT/.submodule/'
 
 ### 3. README.md, AGENTS.md, opencode.json
 
