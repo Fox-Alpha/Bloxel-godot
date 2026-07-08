@@ -7,19 +7,16 @@
   ],
   "permission": {
     "external_directory": {
+      "/**": "deny",
       "~/.config/opencode/**": "allow",
-      "/**": "deny"
+      "~/Projekte/Godot/**": "ask"
     },
     "edit": {
       "~/.config/opencode/**": "deny",
-      "~/.config/opencode/opencode.json": "allow"
+      "~/.config/opencode/opencode.json": "ask"
     },
     "glob": {
-      "~/.config/opencode/**" : "allow"
-    },
-    "bash": {
-      "*": "ask",
-      "grep *": "allow"
+      "~/.config/opencode/**" : "ask"
     }
   },
   "mcp": {
