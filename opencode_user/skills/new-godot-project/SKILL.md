@@ -15,23 +15,24 @@ description: Setup a new Godot project with OpenCode support. Creates repo struc
 
 ```
 {project-name}/
+├── .exports/
+├── .opencode/{instructions,agents,files}/
+├── .submodule/{addons,andere}/
+├── assets/{sprites,sounds,fonts}/
+├── docs/
 ├── src/
+│   ├── addons/
 │   ├── assets/
 │   ├── scenes/
 │   ├── scripts/
-│   ├── addons/
 │   ├── project.godot
 │   └── icon.svg
-├── assets/{sprites,sounds,fonts}/
-├── docs/
 ├── reference/
-├── .exports/
-├── .opencode/{instructions,agents,files}/
+├── .gitignore
+├── .editorconfig
 ├── AGENTS.md
 ├── opencode.json
-├── README.md
-├── .gitignore
-└── .editorconfig
+└── README.md
 ```
 
 ## Ausführung
