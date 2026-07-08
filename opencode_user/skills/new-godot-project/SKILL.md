@@ -9,6 +9,7 @@ description: Setup a new Godot project with OpenCode support. Creates repo struc
 
 1. Frage nach dem **Projektnamen** (wird für Ordner, `project.godot`, README etc. verwendet)
 2. Frage optional nach einer **Kurzbeschreibung** für `project.md`
+3. Frage ob es bereits einen **Remote Host** für das Repository git. Wird in Step 4 für Git Initialisierung benötigt.
 
 ## Verzeichnisstruktur
 
@@ -40,6 +41,7 @@ description: Setup a new Godot project with OpenCode support. Creates repo struc
 ```bash
 mkdir -p {project-name}/{src/{assets,scenes,scripts,addons},assets/{sprites,sounds,fonts},docs,reference,.exports,.opencode/{instructions,agents,files}}
 ```
+- Erzeuge in allen Ordnern eine '.GITKEEP' um die Ordner Struktur im Repository zu erzeugen
 
 ### 2. Templates kopieren
 
@@ -162,10 +164,12 @@ git commit -m "Add: initial project setup"
 git checkout -b development
 ```
 
+- Wenn ein Remote Host existiert, füge diesen vor dem Checkout mit ein.
+
 ### 5. Abschluss
 
 Gib eine Zusammenfassung aus:
 - Struktur angelegt unter `{project-name}/`
 - Git auf `development`-Branch, initialer Commit auf `main`
 - `autocrlf = false` gesetzt (Windows-kompatibel)
-- Nächste Schritte: Godot öffnen, `src/project.godot` importieren, erste Szene anlegen, `project.md` mit Details befüllen
+- Nächste Schritte: Meldung an User: OpenCode CLI neustartet (Einlesen der opencode.json, instructions usw.), Godot öffnen, `src/project.godot` importieren, erste Szene anlegen, `project.md` mit Details befüllen
