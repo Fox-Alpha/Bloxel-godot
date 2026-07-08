@@ -36,7 +36,20 @@
         "http://localhost:7012/api/mcp"
       ],
       "enabled": true
-    }
+    },
+		"godot-lsp": {
+			"type": "local",
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-lsp-mcp"],
+			"enabled": true,
+			"environment": {
+				"GODOT_LSP_PORT": "6005"
+			}
+		},
+		"godot-export": {
+			"type": "local",
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-export-mcp"],
+			"enabled": true
+		}
   },
   "agent": {},
   "formatter": {
