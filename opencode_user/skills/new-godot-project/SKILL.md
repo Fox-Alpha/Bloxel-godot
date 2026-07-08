@@ -94,7 +94,55 @@ Godot 4 Projekt. Siehe `.opencode/instructions/project.md` für Details.
   ],
   "permission": {
     "external_directory": {
-      "~/.config/opencode/**": "allow"
+      "/**": "deny",
+      "~/.config/opencode/**": "allow",
+      "~/Projekte/Godot/**": "ask"
+    },
+    "edit": {
+      "~/.config/opencode/**": "deny",
+      "~/.config/opencode/opencode.json": "ask"
+    },
+    "glob": {
+      "~/.config/opencode/**" : "ask"
+    }
+  },
+  "mcp": {
+    "godot-ai": {
+      "url": "http://127.0.0.1:8000/mcp",
+      "type": "remote",
+      "enabled": true
+    },
+    "ziva-godot": {
+      "type": "local",
+      "command": [
+        "/home/buckdi/.local/share/ziva-local/bin/zivacode",
+        "--mcp-bridge",
+        "--godot-bin",
+        "/home/buckdi/Projekte/Godot/Engine/4.7_stable/Godot_v4.7-stable_linux.x86_64",
+        "--upstream",
+        "http://localhost:7012/api/mcp"
+      ],
+      "enabled": true
+    },
+		"godot-lsp": {
+			"type": "local",
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-lsp-mcp"],
+			"enabled": true,
+			"environment": {
+				"GODOT_LSP_PORT": "6005"
+			}
+		},
+		"godot-export": {
+			"type": "local",
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-export-mcp"],
+			"enabled": true
+		}
+  },
+  "agent": {},
+  "formatter": {
+    "gdscript-formatter": {
+      "command": ["gd4formatter", "--safe", "$FILE"],
+      "extensions": [".gd"]
     }
   }
 }
