@@ -28,7 +28,8 @@ func get_display_name(is_host_role: bool) -> String:
 	player_name = base
 	if is_host_role:
 		return base + " (Host)"
-	return base + " (Client)"
+	else:
+		return base + " (Client)"
 
 
 func _set_pid_title() -> void:

@@ -1,14 +1,14 @@
 extends Node2D
 ## Hauptspiel-Logik für Bloxel Tetris.
 ##
-## Verwaltet Spielfeld, Eingabe, Kollision, Punktzahl, Ghost-Piece,
-## DAS/ARR, Lock-Delay und Multiplayer-Sync via ENet-RPCs.
-## Stück-Definitionen und Board-Serialisierung sind in [PieceData] bzw.
-## [BoardCodec] ausgelagert.
+## Verwaltet das Spielfeld, Eingabe, Kollision, Punktzahl,
+## Ghost-Piece, DAS/ARR und Multiplayer-Sync via ENet-RPCs.
+##
+## @tutorial: https://github.com/anomalyco/ai-tetris-deepseek
 
-#region Enums
+# ── Enums ──────────────────────────────────────────
 
-## Tetromino-Typen mit den Werten 1–7 (passen zu PieceData-Keys).
+## Tetromino-Typen mit den Werten 1–7.
 enum PieceType {
 	I = 1, ## Gerader Viererblock.
 	O = 2, ## Quadratblock.
@@ -19,9 +19,7 @@ enum PieceType {
 	L = 7, ## L-förmiger Block.
 }
 
-#endregion
-
-#region Constants
+# ── Constants ──────────────────────────────────────
 
 ## Spalten im Spielfeld.
 const COLS := 10
@@ -55,16 +53,8 @@ const GRID_BORDER := 4
 const UI_OFFSET_X := 20
 ## Vertikaler Offset der UI-Elemente.
 const UI_OFFSET_Y := 20
-## Lock-Delay: Sekunden bis ein aufliegendes Stück einrastet.
-const LOCK_DELAY := 0.5
-## Maximalanzall Lock-Resets durch Move/Rotate bevor erzwungenes Locken.
-const MAX_LOCK_RESETS := 15
-## Gnadenfrist (Sekunden) für reliable RPC, bevor Sync-Fallback die Summary zeigt.
-const OPP_TOP_GRACE := 1.5
 
-#endregion
-
-#region Node references
+# ── Node references ────────────────────────────────
 
 ## Label für die aktuelle Punktzahl.
 @onready var score_label: Label = $UI/ScoreLabel
@@ -85,15 +75,26 @@ const OPP_TOP_GRACE := 1.5
 ## Summary-Overlay (Post-Game-Statistiken).
 @onready var summary: Control = $Overlays/Summary
 ## Referenz auf den MultiplayerManager (ENet).
-@onready var mp_manager: Node = $MultiplayerManager
+@onready var mp_manager = $MultiplayerManager
 ## Label für die vergangene Spielzeit.
 @onready var time_label: Label = $UI/TimeLabel
 ## Label für die aktuelle Runde (Multiplayer).
 @onready var round_num_label: Label = $UI/RoundLabel
 
-#endregion
+# ── Piece data (initialized in _init_data) ─────────
 
-#region Game state
+## Farben pro PieceType (auch Key 0 für leere Zelle).
+var colors: Dictionary = {}
+## Zell-Muster pro PieceType (Basis-Rotation 0).
+var piece_cells: Dictionary = {}
+## Bounding-Box-Grösse pro PieceType.
+var piece_size: Dictionary = {}
+## SRS Wall-Kick-Tabelle für J, L, S, T, Z.
+var jlstz_kicks: Dictionary = {}
+## SRS Wall-Kick-Tabelle für I-Piece.
+var i_kicks: Dictionary = {}
+
+# ── Game state ─────────────────────────────────────
 
 ## Spielfeld als 2D-Array (TOTAL_ROWS × COLS), 0 = leer, sonst PieceType.
 var board: Array = []
@@ -112,18 +113,14 @@ var level: int = 0
 ## Ob das Spiel vorbei ist.
 var game_over: bool = false
 
-#endregion
-
-#region Stats
+# ── Stats (for summary) ────────────────────────────
 
 ## Bisherige Spielzeit in Sekunden (für Statistik).
 var play_time: float = 0.0
 ## Anzahl gelandeter Pieces (für Statistik).
 var total_pieces: int = 0
 
-#endregion
-
-#region Timers
+# ── Timers ─────────────────────────────────────────
 
 ## Timer für automatischen Drop (kumuliert delta).
 var drop_timer: float = 0.0
@@ -133,16 +130,8 @@ var drop_interval: float = 0.8
 var das_timer: float = 0.0
 ## Aktuelle DAS-Richtung: -1 = links, 0 = keine, 1 = rechts.
 var das_dir: int = 0
-## Lock-Delay-Timer: zählt hoch, solange das Stück aufliegt.
-var lock_timer: float = 0.0
-## Anzahl Lock-Resets in der aktuellen Aufliege-Phase.
-var lock_reset_count: int = 0
-## Soft-Drop-Status, einmal pro Frame erfasst (konsistent im while-Loop).
-var _soft_drop_active: bool = false
 
-#endregion
-
-#region Layout
+# ── Layout ─────────────────────────────────────────
 
 ## X-Position des Spielfeld-Origins.
 var board_x: int = 0
@@ -151,9 +140,7 @@ var preview_x: int = 0
 ## X-Position der UI-Labels.
 var ui_x: int = 0
 
-#endregion
-
-#region Multiplayer state
+# ── Multiplayer state ──────────────────────────────
 
 ## Ob eine Multiplayer-Sitzung aktiv ist.
 var is_multiplayer: bool = false
@@ -191,19 +178,16 @@ var player_name: String = ""
 var opponent_name: String = "Opponent"
 ## Aktuelle Runden-Nummer.
 var round_num: int = 0
-## Ob der lokale Spieler verloren hat (getoppt).
+## Ob der lokale Spieler verloren hat.
 var i_lost: bool = false
-## Ob der Gegner getoppt hat (per RPC/Sync erfahren).
-var opponent_topped_out: bool = false
-## Gnadenfrist-Timer für reliable RPC, bevor Sync-Fallback greift.
-var opp_top_grace: float = 0.0
 
-#endregion
+# ══════════════════════════════════════════════════
+#  Lifecycle
+# ══════════════════════════════════════════════════
 
-#region Lifecycle
-
-## Initialisiert Layout und verbindet UI-Signale.
+## Initialisiert Daten, Layout und verbindet UI-Signale.
 func _ready() -> void:
+	_init_data()
 	_init_layout()
 	game_over_label.hide()
 	opponent_score_label.hide()
@@ -222,45 +206,44 @@ func _ready() -> void:
 			c.focus_mode = Control.FOCUS_NONE
 
 
-## Hauptspiel-Schleife: Drop-Timer, Lock-Delay, DAS-Repeat und Multiplayer-Sync.
-## Diskrete Eingaben werden in [_unhandled_input] verarbeitet.
+## Hauptspiel-Schleife: Input, Drop-Timer und Multiplayer-Sync.
 func _process(delta: float) -> void:
 	if lobby.visible or summary.visible:
 		return
 	if game_over:
 		play_time += delta
 		_update_ui()
+		if Input.is_action_just_pressed("hard_drop") and not is_multiplayer:
+			_start_single_player()
 		return
 	play_time += delta
-	# Gegner-Top-Out: warte kurz auf reliable RPC, dann Sync-Fallback.
-	if opponent_topped_out and not game_over:
-		opp_top_grace -= delta
-		if opp_top_grace <= 0.0:
-			_on_opponent_topped_out()
-			return
-	# Soft-Drop-Status einmal pro Frame erfassen (konsistent im while-Loop).
-	_soft_drop_active = Input.is_action_pressed("soft_drop")
-	var interval := drop_interval / 10.0 if _soft_drop_active else drop_interval
+	if Input.is_action_just_pressed("soft_drop"):
+		_move(0, 1)
+	# Soft-Drop = 10× schnellere Fallgeschwindigkeit
+	var interval := drop_interval / 10.0 if Input.is_action_pressed("soft_drop") else drop_interval
 	drop_timer += delta
 	while drop_timer >= interval:
 		drop_timer -= interval
 		_drop()
 		if game_over:
 			break
-	# Lock-Delay: aufliegendes Stück einrasten lassen, sonst Timer zurücksetzen.
-	if not game_over and not current.is_empty():
-		if _is_resting():
-			lock_timer += delta
-			if lock_timer >= LOCK_DELAY:
-				_lock()
-		else:
-			lock_timer = 0.0
-			lock_reset_count = 0
-	# DAS-Repeat: gehaltene Taste ist in _process sicher auswertbar.
+	if Input.is_action_just_pressed("move_left"):
+		_move(-1, 0)
+		das_dir = -1
+		das_timer = 0.0
+	elif Input.is_action_just_pressed("move_right"):
+		_move(1, 0)
+		das_dir = 1
+		das_timer = 0.0
+	if Input.is_action_just_released("move_left") and das_dir == -1:
+		das_dir = 0
+	if Input.is_action_just_released("move_right") and das_dir == 1:
+		das_dir = 0
 	if das_dir != 0:
 		var action_name := "move_left" if das_dir == -1 else "move_right"
 		if Input.is_action_pressed(action_name):
 			das_timer += delta
+			# DAS: initiale Verzögerung (DAS_DELAY) gefolgt von Wiederholungen (DAS_RATE)
 			while das_timer >= DAS_DELAY + DAS_RATE:
 				das_timer -= DAS_RATE
 				_move(das_dir, 0)
@@ -274,14 +257,8 @@ func _process(delta: float) -> void:
 	_update_ui()
 
 
-## Verarbeitet alle diskreten Eingaben (Move, Rotate, Hard/Soft-Drop, Restart).
+## Verarbeitet Hard-Drop und Rotation als einmalige Aktionen.
 func _unhandled_input(event: InputEvent) -> void:
-	# Einzelspieler-Neustart über Hard-Drop bei Game Over.
-	if game_over and not is_multiplayer and not lobby.visible and not summary.visible:
-		if event.is_action_pressed("hard_drop"):
-			_start_single_player()
-			get_viewport().set_input_as_handled()
-		return
 	if lobby.visible or summary.visible or game_over:
 		return
 	if event.is_action_pressed("hard_drop"):
@@ -289,25 +266,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("rotate"):
 		_rotate_cw()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_left"):
-		_move(-1, 0)
-		das_dir = -1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_right"):
-		_move(1, 0)
-		das_dir = 1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("soft_drop"):
-		_move(0, 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_left") and das_dir == -1:
-		das_dir = 0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_right") and das_dir == 1:
-		das_dir = 0
 		get_viewport().set_input_as_handled()
 
 
@@ -327,9 +285,62 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2(), vs), Color(0, 0, 0, 0.55))
 	_draw_ui_labels()
 
-#endregion
 
-#region Initialization
+# ══════════════════════════════════════════════════
+#  Initialization
+# ══════════════════════════════════════════════════
+
+## Initialisiert Piece-Daten: Farben, Zellen, Grössen und SRS-Kick-Tabellen.
+func _init_data() -> void:
+	colors = {
+		PieceType.I: Color(0.0, 0.95, 0.95),
+		PieceType.O: Color(0.95, 0.95, 0.0),
+		PieceType.T: Color(0.6, 0.1, 0.95),
+		PieceType.S: Color(0.0, 0.95, 0.1),
+		PieceType.Z: Color(0.95, 0.0, 0.1),
+		PieceType.J: Color(0.1, 0.5, 0.95),
+		PieceType.L: Color(0.95, 0.5, 0.0),
+	}
+	colors[0] = Color(0.15, 0.15, 0.18)
+	piece_cells = {
+		PieceType.I: [Vector2(0, 1), Vector2(1, 1), Vector2(2, 1), Vector2(3, 1)],
+		PieceType.O: [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)],
+		PieceType.T: [Vector2(1, 0), Vector2(0, 1), Vector2(1, 1), Vector2(2, 1)],
+		PieceType.S: [Vector2(1, 0), Vector2(2, 0), Vector2(0, 1), Vector2(1, 1)],
+		PieceType.Z: [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(2, 1)],
+		PieceType.J: [Vector2(0, 0), Vector2(0, 1), Vector2(1, 1), Vector2(2, 1)],
+		PieceType.L: [Vector2(2, 0), Vector2(0, 1), Vector2(1, 1), Vector2(2, 1)],
+	}
+	piece_size = {
+		PieceType.I: Vector2i(4, 4),
+		PieceType.O: Vector2i(2, 2),
+		PieceType.T: Vector2i(3, 3),
+		PieceType.S: Vector2i(3, 3),
+		PieceType.Z: Vector2i(3, 3),
+		PieceType.J: Vector2i(3, 3),
+		PieceType.L: Vector2i(3, 3),
+	}
+	jlstz_kicks = {
+		"0>1": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(-1, -1), Vector2i(0, 2), Vector2i(-1, 2)],
+		"1>0": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, -2), Vector2i(1, -2)],
+		"1>2": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, -2), Vector2i(1, -2)],
+		"2>1": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(-1, -1), Vector2i(0, 2), Vector2i(-1, 2)],
+		"2>3": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, 2), Vector2i(1, 2)],
+		"3>2": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, -2), Vector2i(-1, -2)],
+		"3>0": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(-1, -1), Vector2i(0, 2), Vector2i(-1, 2)],
+		"0>3": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, -2), Vector2i(1, -2)],
+	}
+	i_kicks = {
+		"0>1": [Vector2i(0, 0), Vector2i(-2, 0), Vector2i(1, 0), Vector2i(-2, 1), Vector2i(1, -2)],
+		"1>0": [Vector2i(0, 0), Vector2i(2, 0), Vector2i(-1, 0), Vector2i(2, -1), Vector2i(-1, 2)],
+		"1>2": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(2, 0), Vector2i(-1, -2), Vector2i(2, 1)],
+		"2>1": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(-2, 0), Vector2i(1, 2), Vector2i(-2, -1)],
+		"2>3": [Vector2i(0, 0), Vector2i(2, 0), Vector2i(-1, 0), Vector2i(2, -1), Vector2i(-1, 2)],
+		"3>2": [Vector2i(0, 0), Vector2i(-2, 0), Vector2i(1, 0), Vector2i(-2, 1), Vector2i(1, -2)],
+		"3>0": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(-2, 0), Vector2i(1, 2), Vector2i(-2, -1)],
+		"0>3": [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(2, 0), Vector2i(-1, -2), Vector2i(2, 1)],
+	}
+
 
 ## Berechnet Board- und UI-Positionen basierend auf Viewport-Grösse.
 func _init_layout() -> void:
@@ -359,9 +370,10 @@ func _set_ui_font_sizes() -> void:
 	opponent_label.add_theme_font_size_override("font_size", fs)
 	time_label.add_theme_font_size_override("font_size", fs)
 
-#endregion
 
-#region Game start
+# ══════════════════════════════════════════════════
+#  Game start
+# ══════════════════════════════════════════════════
 
 ## Startet ein Einzelspieler-Spiel.
 func _start_single_player() -> void:
@@ -377,7 +389,6 @@ func _start_multiplayer() -> void:
 	is_host = mp_manager.is_host
 	player_name = lobby.player_name
 	i_lost = false
-	opponent_topped_out = false
 	if round_num == 0:
 		round_num = 1
 	_init_layout()
@@ -400,7 +411,12 @@ func _start_multiplayer() -> void:
 
 ## Initialisiert Board, Bag und Zustand für ein neues Spiel.
 func _new_game() -> void:
-	board = _create_empty_board()
+	board = []
+	for _i in range(TOTAL_ROWS):
+		var r: Array = []
+		for _j in range(COLS):
+			r.append(0)
+			board.append(r)
 	bag = []
 	score = 0
 	lines_total = 0
@@ -410,10 +426,6 @@ func _new_game() -> void:
 	total_pieces = 0
 	drop_interval = 0.8
 	drop_timer = 0.0
-	lock_timer = 0.0
-	lock_reset_count = 0
-	opponent_topped_out = false
-	opp_top_grace = 0.0
 	next_type = _pop_bag()
 	_spawn()
 	_update_ui()
@@ -423,19 +435,9 @@ func _new_game() -> void:
 	queue_redraw()
 
 
-## Erzeugt ein leeres Board (TOTAL_ROWS × COLS) mit unabhängigen Zeilen.
-func _create_empty_board() -> Array:
-	var b: Array = []
-	for i in range(TOTAL_ROWS):
-		var r: Array = []
-		r.resize(COLS)
-		r.fill(0)
-		b.append(r)
-	return b
-
-#endregion
-
-#region Piece generation
+# ══════════════════════════════════════════════════
+#  Piece generation
+# ══════════════════════════════════════════════════
 
 ## Zieht den nächsten Piece-Typ aus dem 7-Bag.
 ## Füllt den Bag mit einer neuen Shuffle-Runde, wenn er zur Neige geht.
@@ -453,11 +455,26 @@ func _pop_bag() -> int:
 ## [param rot] — Anzahl der 90°-Drehungen im Uhrzeigersinn (0–3).
 ## [return] — Array von Vector2-Zellkoordinaten.
 func _get_cells(typ: int, rot: int) -> Array:
-	return PieceData.get_cells(typ, rot)
+	var base: Array = piece_cells[typ]
+	var size: Vector2i = piece_size[typ]
+	var c: Array = base.duplicate()
+	var w: int = size.x
+	var h: int = size.y
+	# 90°-Rotation im Uhrzeigersinn: (x, y) → (h-1-y, x)
+	for _r in range(rot):
+		var n: Array = []
+		for cell in c:
+			n.append(Vector2(h - 1 - cell.y, cell.x))
+		c = n
+		var t := w
+		w = h
+		h = t
+	return c
 
-#endregion
 
-#region Spawn / movement / rotation
+# ══════════════════════════════════════════════════
+#  Spawn / movement / rotation
+# ══════════════════════════════════════════════════
 
 ## Spawnt das nächste Piece und prüft auf Game Over (Block-Out).
 func _spawn() -> void:
@@ -469,8 +486,6 @@ func _spawn() -> void:
 		game_over = true
 		_trigger_game_over()
 	drop_timer = 0.0
-	lock_timer = 0.0
-	lock_reset_count = 0
 	queue_redraw()
 
 
@@ -492,21 +507,6 @@ func _is_valid(cels: Array, px: int, py: int) -> bool:
 	return true
 
 
-## Prüft, ob das aktuelle Stück nicht weiter nach unten kann (aufliegt).
-func _is_resting() -> bool:
-	if current.is_empty():
-		return false
-	return not _is_valid(_get_cells(current.type, current.rot), current.x, current.y + 1)
-
-
-## Setzt Lock-Timer/Reset-Counter zurück, wenn das Stück aufliegt und das
-## Reset-Limit noch nicht erreicht ist (Infinite-Spin-Schutz).
-func _try_reset_lock() -> void:
-	if lock_reset_count < MAX_LOCK_RESETS and _is_resting():
-		lock_timer = 0.0
-		lock_reset_count += 1
-
-
 ## Bewegt das aktuelle Piece um (dx, dy), wenn möglich.
 ## [return] — true wenn die Bewegung ausgeführt wurde.
 func _move(dx: int, dy: int) -> bool:
@@ -515,9 +515,6 @@ func _move(dx: int, dy: int) -> bool:
 	if _is_valid(_get_cells(current.type, current.rot), current.x + dx, current.y + dy):
 		current.x += dx
 		current.y += dy
-		# Horizontale Bewegung darf Lock-Delay zurücksetzen (Infinite Spin begrenzt).
-		if dy == 0:
-			_try_reset_lock()
 		queue_redraw()
 		return true
 	return false
@@ -529,27 +526,35 @@ func _rotate_cw() -> void:
 		return
 	var nr: int = (current.rot + 1) % 4
 	var cels: Array = _get_cells(current.type, nr)
-	# O-Stück rotiert an Ort und Stelle (keine Wall-Kicks).
-	if current.type == PieceType.O:
+	var kicks: Dictionary
+	match current.type:
+		PieceType.I:
+			kicks = i_kicks
+		PieceType.O:
+			kicks = {}
+		_:
+			kicks = jlstz_kicks
+	if kicks.is_empty():
 		if _is_valid(cels, current.x, current.y):
 			current.rot = nr
-			_try_reset_lock()
 			queue_redraw()
 		return
-	# Wall-Kick-Tabelle: probiere Offsets der Reihe nach.
-	var kicks: Array = PieceData.get_kicks(current.type, current.rot, nr)
-	for k in kicks:
+	# Wall-Kick-Tabelle: Key = "alteRota>neueRota", probiere Offsets der Reihe nach
+	var key: String = str(current.rot) + ">" + str(nr)
+	if not kicks.has(key):
+		return
+	for k in kicks[key]:
 		if _is_valid(cels, current.x + k.x, current.y + k.y):
 			current.rot = nr
 			current.x += k.x
 			current.y += k.y
-			_try_reset_lock()
 			queue_redraw()
 			return
 
-#endregion
 
-#region Drop / lock / clear
+# ══════════════════════════════════════════════════
+#  Drop / lock / clear
+# ══════════════════════════════════════════════════
 
 ## Lässt das Piece sofort auf die unterste gültige Position fallen.
 ## Bonus-Punkte: 2 pro zurückgelegter Reihe.
@@ -560,22 +565,21 @@ func _hard_drop() -> void:
 	var gy: int = current.y
 	while _is_valid(cels, current.x, gy + 1):
 		gy += 1
-	# 2 Punkte pro zurückgelegter Reihe (Hard-Drop-Bonus).
+	# 2 Punkte pro zurückgelegter Reihe (Hard-Drop-Bonus)
 	score += (gy - current.y) * 2
 	current.y = gy
 	_lock()
 
 
-## Führt einen Drop-Schritt aus. Lockt NICHT mehr sofort — das übernimmt
-## das Lock-Delay in [_process]. Soft-Drop-Scoring nutzt den pro Frame
-## erfassten [_soft_drop_active]-Status.
+## Führt einen Drop-Schritt aus. Lockt das Piece, wenn keine Bewegung möglich.
 func _drop() -> void:
 	if game_over:
 		return
-	if _move(0, 1):
-		if _soft_drop_active:
-			score += 1
-			_update_ui()
+	if not _move(0, 1):
+		_lock()
+	elif Input.is_action_pressed("soft_drop"):
+		score += 1
+		_update_ui()
 
 
 ## Schreibt das aktuelle Piece ins Board, löscht volle Linien und spawnt nächstes.
@@ -584,12 +588,10 @@ func _lock() -> void:
 	for cell in cels:
 		var cx: int = current.x + int(cell.x)
 		var cy: int = current.y + int(cell.y)
-		# Nur im sichtbaren + versteckten Bereich schreiben (Zellen oberhalb ignorieren).
+		# Nur im sichtbaren + versteckten Bereich schreiben (Zellen oberhalb ignorieren)
 		if cy >= 0 and cy < TOTAL_ROWS and cx >= 0 and cx < COLS:
 			board[cy][cx] = current.type
 	total_pieces += 1
-	lock_timer = 0.0
-	lock_reset_count = 0
 	_clear_lines()
 	_spawn()
 	_update_ui()
@@ -600,7 +602,7 @@ func _lock() -> void:
 ## Punkte-Skala: 1/2/3/4 Lines → 100/300/500/800 × (level + 1).
 func _clear_lines() -> void:
 	var cleared := 0
-	# Von unten nach oben prüfen, damit indices nach shift korrekt bleiben.
+	# Von unten nach oben prüfen, damit indices nach shift korrekt bleiben
 	var r := TOTAL_ROWS - 1
 	while r >= 0:
 		var full := true
@@ -609,12 +611,12 @@ func _clear_lines() -> void:
 				full = false
 				break
 		if full:
-			# Alle Reihen oberhalb nach unten verschieben.
+			# Alle Reihen oberhalb nach unten verschieben
 			for rr in range(r, 0, -1):
 				board[rr] = board[rr - 1].duplicate()
 			var empty: Array = []
-			empty.resize(COLS)
-			empty.fill(0)
+			for _c in range(COLS):
+				empty.append(0)
 			board[0] = empty
 			cleared += 1
 		else:
@@ -628,11 +630,12 @@ func _clear_lines() -> void:
 			level = new_level
 			drop_interval = max(0.05, 0.8 - level * 0.05)
 
-#endregion
 
-#region Game over
+# ══════════════════════════════════════════════════
+#  Game over
+# ══════════════════════════════════════════════════
 
-## Zeigt Game-Over-Label, benachrichtigt Gegner (MP) und zeigt Summary (SP).
+## Zeigt Game-Over-Label und benachrichtigt Gegner (MP) / zeigt Summary (SP).
 func _trigger_game_over() -> void:
 	i_lost = true
 	game_over_label.show()
@@ -650,20 +653,15 @@ func _send_game_over_to_opponent() -> void:
 	)
 
 
-## Baut das lokale Statistik-Dictionary für die Summary.
-func _build_local_stats() -> Dictionary:
-	return {
+## Zeigt die Summary mit den bereits bekannten Gegner-Daten.
+func _show_summary_with_synced_opponent_data() -> void:
+	var local_stats := {
 		score = score,
 		lines = lines_total,
 		level = level,
 		play_time = play_time,
 		pieces = total_pieces,
 	}
-
-
-## Zeigt die Summary mit den bereits bekannten Gegner-Daten.
-func _show_summary_with_synced_opponent_data() -> void:
-	var local_stats := _build_local_stats()
 	if is_multiplayer:
 		var os := {
 			score = opponent_score,
@@ -672,11 +670,7 @@ func _show_summary_with_synced_opponent_data() -> void:
 			play_time = 0.0,
 			pieces = 0,
 		}
-		summary.show_summary(
-			local_stats, os, true, round_num,
-			player_name, opponent_name,
-			i_lost, opponent_topped_out,
-		)
+		summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost)
 	else:
 		summary.show_summary(local_stats, {}, false)
 	queue_redraw()
@@ -685,42 +679,20 @@ func _show_summary_with_synced_opponent_data() -> void:
 ## Zeigt die Summary mit per RPC empfangenen Gegner-Daten.
 ## [param opponent_stats] — Vom Gegner erhaltene End-Statistiken.
 func _show_summary_with_received_data(opponent_stats: Dictionary) -> void:
-	var local_stats := _build_local_stats()
-	summary.show_summary(
-		local_stats, opponent_stats, true, round_num,
-		player_name, opponent_name,
-		i_lost, opponent_topped_out,
-	)
-	queue_redraw()
-
-
-## Sync-Fallback: Gegner hat getoppt, reliable RPC blieb aus.
-## Zeigt die Summary mit den aus Sync bekannten (ggf. unvollständigen) Daten.
-func _on_opponent_topped_out() -> void:
-	if game_over:
-		return
-	i_lost = false
-	opponent_topped_out = true
-	game_over = true
-	game_over_label.show()
-	var local_stats := _build_local_stats()
-	var os := {
-		score = opponent_score,
-		lines = opponent_lines,
-		level = opponent_level,
-		play_time = 0.0,
-		pieces = 0,
+	var local_stats := {
+		score = score,
+		lines = lines_total,
+		level = level,
+		play_time = play_time,
+		pieces = total_pieces,
 	}
-	summary.show_summary(
-		local_stats, os, true, round_num,
-		player_name, opponent_name,
-		i_lost, opponent_topped_out,
-	)
+	summary.show_summary(local_stats, opponent_stats, true, round_num, player_name, opponent_name, i_lost)
 	queue_redraw()
 
-#endregion
 
-#region Ghost
+# ══════════════════════════════════════════════════
+#  Ghost
+# ══════════════════════════════════════════════════
 
 ## Ermittelt die Y-Position des Ghost-Pieces (weichster Drop).
 ## [return] — Y-Position des Aufsetzpunkts.
@@ -731,9 +703,10 @@ func _ghost_y() -> int:
 		gy += 1
 	return gy
 
-#endregion
 
-#region UI
+# ══════════════════════════════════════════════════
+#  UI
+# ══════════════════════════════════════════════════
 
 ## Aktualisiert das Label mit dem gegnerischen Namen und Host-Status.
 func _update_opponent_label() -> void:
@@ -777,9 +750,10 @@ func _draw_ui_labels() -> void:
 		opponent_score_label.position = Vector2(opp_board_x, opp_board_y + ROWS * opp_cell + 8)
 		opponent_label.position = Vector2(opp_board_x, opp_board_y - 24)
 
-#endregion
 
-#region Drawing
+# ══════════════════════════════════════════════════
+#  Drawing
+# ══════════════════════════════════════════════════
 
 ## Zeichnet ein Spielfeld (eigenes oder Gegner) inkl. Grid, Blöcke und Ghost.
 ## [param origin_x] — X-Position des Board-Origins.
@@ -800,38 +774,24 @@ func _draw_board(origin_x: int, origin_y: int, cell_size: int, is_opponent: bool
 	for r in range(ROWS + 1):
 		var y := origin_y + r * cell_size
 		draw_line(Vector2(origin_x, y), Vector2(origin_x + bw, y), grid)
-	# Eigenes oder Gegner-Board als Block-Quelle verwenden.
+	# Eigenes oder Gegner-Board als Block-Quelle verwenden
 	var src_board: Array = opponent_board if is_opponent else board
 	for row in range(HIDDEN, TOTAL_ROWS):
 		for col in range(COLS):
-			var t: int = 0
-			if not src_board.is_empty() and row < src_board.size():
-				t = src_board[row][col]
+			var t: int = src_board[row][col] if not src_board.is_empty() and row < src_board.size() else 0
 			if t != 0:
-				var rect := Rect2(
-					origin_x + col * cell_size + 1,
-					origin_y + (row - HIDDEN) * cell_size + 1,
-					cell_size - 2,
-					cell_size - 2,
-				)
-				var block_col := _get_opp_color(t) if is_opponent else PieceData.get_color(t)
-				draw_rect(rect, block_col)
-	# Ghost-Piece (transparent) + aktives Piece (deckend) zeichnen.
+				var rect := Rect2(origin_x + col * cell_size + 1, origin_y + (row - HIDDEN) * cell_size + 1, cell_size - 2, cell_size - 2)
+				draw_rect(rect, _get_opp_color(t) if is_opponent else colors[t])
+	# Ghost-Piece (transparent) + aktives Piece (deckend) zeichnen
 	if not is_opponent and not game_over and not current.is_empty():
 		var g := _ghost_y()
-		_draw_piece(
-			current.type, current.rot, current.x, g, GHOST_ALPHA,
-			origin_x, origin_y, cell_size,
-		)
-		_draw_piece(
-			current.type, current.rot, current.x, current.y, 1.0,
-			origin_x, origin_y, cell_size,
-		)
+		_draw_piece(current.type, current.rot, current.x, g, GHOST_ALPHA, origin_x, origin_y, cell_size)
+		_draw_piece(current.type, current.rot, current.x, current.y, 1.0, origin_x, origin_y, cell_size)
 
 
 ## Gibt die Farbe eines Gegner-Blocks mit reduzierter Transparenz zurück.
 func _get_opp_color(typ: int) -> Color:
-	var c: Color = PieceData.get_color(typ)
+	var c: Color = colors[typ]
 	c.a = 0.7
 	return c
 
@@ -845,53 +805,77 @@ func _get_opp_color(typ: int) -> Color:
 ## [param origin_x] — Board-Origin X.
 ## [param origin_y] — Board-Origin Y.
 ## [param cell_size] — Pixelgrösse einer Zelle.
-func _draw_piece(
-		typ: int, rot: int, px: int, py: int, alpha: float,
-		origin_x: int, origin_y: int, cell_size: int,
-) -> void:
+func _draw_piece(typ: int, rot: int, px: int, py: int, alpha: float, origin_x: int, origin_y: int, cell_size: int) -> void:
 	var cels: Array = _get_cells(typ, rot)
-	var col: Color = PieceData.get_color(typ)
+	var col: Color = colors[typ]
 	col.a = alpha
 	for cell in cels:
 		var cx := px + int(cell.x)
 		var cy := py + int(cell.y)
 		if cy < HIDDEN or cy >= TOTAL_ROWS:
 			continue
-		var rect := Rect2(
-			origin_x + cx * cell_size + 1,
-			origin_y + (cy - HIDDEN) * cell_size + 1,
-			cell_size - 2,
-			cell_size - 2,
-		)
-		draw_rect(rect, col)
+		draw_rect(Rect2(origin_x + cx * cell_size + 1, origin_y + (cy - HIDDEN) * cell_size + 1, cell_size - 2, cell_size - 2), col)
 
 
 ## Zeichnet die Vorschau des nächsten Pieces.
 func _draw_preview() -> void:
-	if not PieceData.PIECE_CELLS.has(next_type):
+	if not piece_cells.has(next_type):
 		return
-	var cels: Array = PieceData.PIECE_CELLS[next_type]
-	var col: Color = PieceData.get_color(next_type)
+	var cels: Array = piece_cells[next_type]
+	var col: Color = colors[next_type]
 	var ps := CELL * 0.8
 	var py := PREVIEW_Y - 4
 	draw_rect(Rect2(preview_x - 4, py, 5 * ps, 5 * ps), Color(0.1, 0.1, 0.12))
 	for cell in cels:
 		draw_rect(Rect2(preview_x + cell.x * ps, py + cell.y * ps, ps - 2, ps - 2), col)
 
-#endregion
 
-#region Multiplayer sync
+# ══════════════════════════════════════════════════
+#  Multiplayer sync
+# ══════════════════════════════════════════════════
 
 ## Sendet Board-Zustand und Score per RPC an den Gegner (periodisch).
 func _send_sync() -> void:
-	# Nur senden wenn Verbindung aktiv und Peer-ID gültig.
+	# Nur senden wenn Verbindung aktiv und Peer-ID gültig
 	if not is_instance_valid(mp_manager) or mp_manager.opponent_id <= 0:
 		return
 	if multiplayer.multiplayer_peer == null:
 		return
-	# Board als kompaktes Byte-Array übertragen (sparsamer als Array[Array]).
-	var data := BoardCodec.encode(board, TOTAL_ROWS, COLS)
+	# Board als kompaktes Byte-Array übertragen (sparsamer als Array[Array])
+	var data := _encode_board(board)
 	_rpc_sync_state.rpc_id(mp_manager.opponent_id, data, score, lines_total, level, game_over)
+
+
+## Kodiert das Board als kompaktes PackedByteArray.
+## [param b] — Das Board-Array.
+## [return] — Bytepuffer (TOTAL_ROWS × COLS Bytes).
+func _encode_board(b: Array) -> PackedByteArray:
+	var pba := PackedByteArray()
+	pba.resize(TOTAL_ROWS * COLS)
+	var idx := 0
+	for row in range(TOTAL_ROWS):
+		for col in range(COLS):
+			pba[idx] = b[row][col]
+			idx += 1
+	return pba
+
+
+## Dekodiert ein kompaktes PackedByteArray zurück ins Board-Format.
+## [param data] — Bytepuffer (TOTAL_ROWS × COLS Bytes).
+## [return] — Rekonstruiertes Board-Array.
+func _decode_board(data: PackedByteArray) -> Array:
+	var b: Array = []
+	for _i in range(TOTAL_ROWS):
+		var r: Array = []
+		for _j in range(COLS):
+			r.append(0)
+		b.append(r)
+	var idx := 0
+	for row in range(TOTAL_ROWS):
+		for col in range(COLS):
+			b[row][col] = data[idx]
+			idx += 1
+	return b
 
 
 ## Setzt das Spiel zurück und zeigt die Lobby bei Verbindungsabbruch.
@@ -899,7 +883,6 @@ func _on_peer_disconnected() -> void:
 	opponent_board = []
 	opponent_score = 0
 	opponent_game_over = true
-	opponent_topped_out = false
 	game_over = true
 	round_num = 0
 	i_lost = false
@@ -915,38 +898,32 @@ func _on_peer_disconnected() -> void:
 	lobby.set_status("Opponent disconnected")
 	queue_redraw()
 
-#endregion
 
-#region RPCs
+# ══════════════════════════════════════════════════
+#  RPCs
+# ══════════════════════════════════════════════════
 
 @rpc("any_peer", "unreliable", "call_local")
 ## [rpc("any_peer", "unreliable", "call_local")] Synchronisiert Board und Score vom Gegner.
-func _rpc_sync_state(
-		data: PackedByteArray,
-		opp_score: int,
-		opp_lines: int,
-		opp_level: int,
-		opp_game_over: bool,
-) -> void:
+func _rpc_sync_state(data: PackedByteArray, opp_score: int, opp_lines: int, opp_level: int, opp_game_over: bool) -> void:
 	if not is_multiplayer:
 		return
-	opponent_board = BoardCodec.decode(data, TOTAL_ROWS, COLS)
+	opponent_board = _decode_board(data)
 	opponent_score = opp_score
 	opponent_lines = opp_lines
 	opponent_level = opp_level
 	opponent_game_over = opp_game_over
-	# Gegner-Top-Out: Gnadenfrist starten, damit reliable RPC die vollen Stats liefern kann.
-	if opp_game_over and not game_over and not opponent_topped_out:
-		opponent_topped_out = true
-		opp_top_grace = OPP_TOP_GRACE
 	queue_redraw()
 
 
 @rpc("any_peer", "reliable")
 ## [rpc("any_peer", "reliable")] Empfängt Game-Over-Daten vom Gegner und zeigt Summary.
-func _rpc_send_game_over(
-		opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int,
-) -> void:
+func _rpc_send_game_over(opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int) -> void:
+	if game_over:
+		return
+	i_lost = false
+	game_over = true
+	game_over_label.show()
 	var os := {
 		score = opp_score,
 		lines = opp_lines,
@@ -954,23 +931,11 @@ func _rpc_send_game_over(
 		play_time = opp_time,
 		pieces = opp_pieces,
 	}
-	if game_over:
-		# Wir haben bereits getoppt → gleichzeitiges Top-Out: Stats ergänzen
-		# und Winner über Score-Vergleich neu bestimmen.
-		if is_multiplayer:
-			opponent_topped_out = true
-			summary.update_opponent_stats(os, true)
-		return
-	i_lost = false
-	opponent_topped_out = true
-	game_over = true
-	game_over_label.show()
 	_show_summary_with_received_data(os)
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Markiert Gegner als bereit;
-## startet nächste Runde wenn beide bereit.
+## [rpc("any_peer", "reliable")] Markiert Gegner als bereit; startet nächste Runde wenn beide bereit.
 func _rpc_opponent_ready() -> void:
 	opponent_ready = true
 	summary.set_opponent_ready()
@@ -1012,13 +977,12 @@ func _reset_multiplayer_state() -> void:
 	opponent_lines = 0
 	opponent_level = 0
 	opponent_game_over = false
-	opponent_topped_out = false
-	opp_top_grace = 0.0
 	summary.hide()
 
-#endregion
 
-#region Summary callbacks
+# ══════════════════════════════════════════════════
+#  Summary callbacks
+# ══════════════════════════════════════════════════
 
 ## Reagiert auf "Bereit"-Button in der Summary — startet nächste Runde.
 func _on_summary_ready() -> void:
@@ -1039,7 +1003,6 @@ func _on_summary_back() -> void:
 	opponent_board = []
 	opponent_score = 0
 	opponent_game_over = false
-	opponent_topped_out = false
 	round_num = 0
 	i_lost = false
 	opponent_name = "Opponent"
@@ -1051,5 +1014,3 @@ func _on_summary_back() -> void:
 	lobby.reset()
 	lobby.show()
 	queue_redraw()
-
-#endregion

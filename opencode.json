@@ -5,7 +5,20 @@
     ".opencode/instructions/gdscript.md",
     ".opencode/instructions/project.md"
   ],
-
+  "permission": {
+    "external_directory": {
+      "/**": "deny",
+      "~/.config/opencode/**": "allow",
+      "~/Projekte/Godot/**": "ask"
+    },
+    "edit": {
+      "~/.config/opencode/**": "deny",
+      "~/.config/opencode/opencode.json": "ask"
+    },
+    "glob": {
+      "~/.config/opencode/**" : "ask"
+    }
+  },
   "mcp": {
     "godot-ai": {
       "url": "http://127.0.0.1:8000/mcp",
@@ -26,7 +39,7 @@
     },
 		"godot-lsp": {
 			"type": "local",
-			"command": ["/home/buckdi/.local/bin/uv", "run", "--script", "/home/buckdi/.config/opencode/tools/godot-lsp-mcp"],
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-lsp-mcp"],
 			"enabled": true,
 			"environment": {
 				"GODOT_LSP_PORT": "6005"
@@ -34,7 +47,7 @@
 		},
 		"godot-export": {
 			"type": "local",
-			"command": ["/home/buckdi/.local/bin/uv", "run", "--script", "/home/buckdi/.config/opencode/tools/godot-export-mcp"],
+			"command": ["~/.local/bin/uv", "run", "--script", "~/.config/opencode/tools/godot-export-mcp"],
 			"enabled": true
 		}
   },
