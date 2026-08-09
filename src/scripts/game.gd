@@ -188,6 +188,7 @@ var i_lost: bool = false
 ## Initialisiert Daten, Layout und verbindet UI-Signale.
 func _ready() -> void:
 	_init_data()
+	_init_discord()
 	_init_layout()
 	game_over_label.hide()
 	opponent_score_label.hide()
@@ -358,6 +359,20 @@ func _init_layout() -> void:
 	ui_x = preview_x
 
 
+func _init_discord() -> void:
+	DiscordRPC.app_id = 1536043099288113286 # Application-ID
+	DiscordRPC.details = "Bloxel - Ein Tetris Clone"
+	DiscordRPC.state = "Just started"
+	DiscordRPC.large_image = "just_started" # Bild-Key aus "Art Assets"
+	DiscordRPC.large_image_text = "Alleine oder zu Zweit!"
+	DiscordRPC.small_image = "icon_512px" # Bild-Key aus "Art Assets"
+	DiscordRPC.small_image_text = "Just for Fun!"
+
+	DiscordRPC.start_timestamp = int(Time.get_unix_time_from_system()) # "02:46 vergangen"
+	# DiscordRPC.end_timestamp = int(Time.get_unix_time_from_system()) + 3600 # +1 Stunde in Unix-Zeit / "01:00:00 verbleibend"
+
+	DiscordRPC.refresh() # Nach Änderung der Variablen immer aktualisieren!
+
 ## Setzt konsistente Schriftgrössen für alle UI-Labels.
 func _set_ui_font_sizes() -> void:
 	var fs := 20
@@ -433,6 +448,9 @@ func _new_game() -> void:
 	summary.hide()
 	time_label.show()
 	queue_redraw()
+	DiscordRPC.state = "Hunting the Score"
+	DiscordRPC.small_image = "singleplayer"
+	DiscordRPC.refresh()
 
 
 # ══════════════════════════════════════════════════
