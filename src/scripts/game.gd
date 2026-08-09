@@ -4,7 +4,11 @@ extends Node2D
 ## Verwaltet das Spielfeld, Eingabe, Kollision, Punktzahl,
 ## Ghost-Piece, DAS/ARR und Multiplayer-Sync via ENet-RPCs.
 ##
-## @tutorial: https://github.com/anomalyco/ai-tetris-deepseek
+
+## TODO: Discord State Änderungen per Signal implementieren.
+## ===: Änderungen sollen nach Szene ausgelöst werden
+## ===: Hauptmenü, Singleplayer, Multiplayer Lobby, Multiplayer Start, Game Over (SP, MP)
+## ===: Update bei Lines, Level, Time
 
 # ── Enums ──────────────────────────────────────────
 
