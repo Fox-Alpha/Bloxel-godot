@@ -237,7 +237,11 @@ func _process(delta: float) -> void:
 			_on_opponent_topped_out()
 			return
 	# Soft-Drop-Status einmal pro Frame erfassen (konsistent im while-Loop).
-	_soft_drop_active = Input.is_action_pressed("soft_drop")
+	var soft_drop_pressed := Input.is_action_pressed("soft_drop")
+	# Die angesammelte Schwerkraft-Zeit würde sonst beim kurzen Intervall mehrere Zeilen auslösen.
+	if soft_drop_pressed and not _soft_drop_active:
+		drop_timer = 0.0
+	_soft_drop_active = soft_drop_pressed
 	var interval := drop_interval / 10.0 if _soft_drop_active else drop_interval
 	drop_timer += delta
 	while drop_timer >= interval:
