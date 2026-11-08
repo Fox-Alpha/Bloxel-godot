@@ -24,13 +24,13 @@ enum PieceType {
 #region Constants
 
 ## Spalten im Spielfeld.
-const COLS := 10
+const COLS := BoardLogic.COLS
 ## Sichtbare Reihen im Spielfeld.
-const ROWS := 20
+const ROWS := BoardLogic.ROWS
 ## Versteckte Reihen oberhalb des sichtbaren Bereichs (Spawn-Schutz).
-const HIDDEN := 2
+const HIDDEN := BoardLogic.HIDDEN
 ## Gesamtreihen inklusive verstecktem Bereich.
-const TOTAL_ROWS := ROWS + HIDDEN
+const TOTAL_ROWS := BoardLogic.TOTAL_ROWS
 ## Pixelgrösse einer Zelle.
 const CELL := 32
 ## Y-Position des Spielfeld-Origins.
@@ -402,7 +402,7 @@ func _start_multiplayer() -> void:
 
 ## Initialisiert Board, Bag und Zustand für ein neues Spiel.
 func _new_game() -> void:
-	board = _create_empty_board()
+	board = BoardLogic.create_empty()
 	bag = []
 	score = 0
 	lines_total = 0
@@ -423,17 +423,6 @@ func _new_game() -> void:
 	summary.hide()
 	time_label.show()
 	queue_redraw()
-
-
-## Erzeugt ein leeres Board (TOTAL_ROWS × COLS) mit unabhängigen Zeilen.
-func _create_empty_board() -> Array:
-	var b: Array = []
-	for i in range(TOTAL_ROWS):
-		var r: Array = []
-		r.resize(COLS)
-		r.fill(0)
-		b.append(r)
-	return b
 
 #endregion
 
@@ -482,16 +471,7 @@ func _spawn() -> void:
 ## [param py] — Y-Position des Piece-Origins.
 ## [return] — true wenn die Position gültig ist.
 func _is_valid(cels: Array, px: int, py: int) -> bool:
-	for cell in cels:
-		var cx := px + int(cell.x)
-		var cy := py + int(cell.y)
-		if cx < 0 or cx >= COLS or cy >= TOTAL_ROWS:
-			return false
-		if cy < 0:
-			continue
-		if board[cy][cx] != 0:
-			return false
-	return true
+	return BoardLogic.is_valid(board, cels, px, py)
 
 
 ## Prüft, ob das aktuelle Stück nicht weiter nach unten kann (aufliegt).
@@ -558,10 +538,7 @@ func _rotate_cw() -> void:
 func _hard_drop() -> void:
 	if game_over:
 		return
-	var cels: Array = _get_cells(current.type, current.rot)
-	var gy: int = current.y
-	while _is_valid(cels, current.x, gy + 1):
-		gy += 1
+	var gy := _ghost_y()
 	# 2 Punkte pro zurückgelegter Reihe (Hard-Drop-Bonus).
 	score += (gy - current.y) * 2
 	current.y = gy
@@ -583,12 +560,7 @@ func _drop() -> void:
 ## Schreibt das aktuelle Piece ins Board, löscht volle Linien und spawnt nächstes.
 func _lock() -> void:
 	var cels: Array = _get_cells(current.type, current.rot)
-	for cell in cels:
-		var cx: int = current.x + int(cell.x)
-		var cy: int = current.y + int(cell.y)
-		# Nur im sichtbaren + versteckten Bereich schreiben (Zellen oberhalb ignorieren).
-		if cy >= 0 and cy < TOTAL_ROWS and cx >= 0 and cx < COLS:
-			board[cy][cx] = current.type
+	BoardLogic.lock_piece(board, cels, current.x, current.y, current.type)
 	total_pieces += 1
 	lock_timer = 0.0
 	lock_reset_count = 0
@@ -601,26 +573,7 @@ func _lock() -> void:
 ## Entfernt volle Reihen, aktualisiert Punktzahl und Level.
 ## Punkte-Skala: 1/2/3/4 Lines → 100/300/500/800 × (level + 1).
 func _clear_lines() -> void:
-	var cleared := 0
-	# Von unten nach oben prüfen, damit indices nach shift korrekt bleiben.
-	var r := TOTAL_ROWS - 1
-	while r >= 0:
-		var full := true
-		for c in range(COLS):
-			if board[r][c] == 0:
-				full = false
-				break
-		if full:
-			# Alle Reihen oberhalb nach unten verschieben.
-			for rr in range(r, 0, -1):
-				board[rr] = board[rr - 1].duplicate()
-			var empty: Array = []
-			empty.resize(COLS)
-			empty.fill(0)
-			board[0] = empty
-			cleared += 1
-		else:
-			r -= 1
+	var cleared := BoardLogic.clear_full_lines(board)
 	if cleared > 0:
 		var points_per_line: Array[int] = [0, 100, 300, 500, 800]
 		score += points_per_line[cleared] * (level + 1)
@@ -741,10 +694,7 @@ func _on_opponent_topped_out() -> void:
 ## [return] — Y-Position des Aufsetzpunkts.
 func _ghost_y() -> int:
 	var cels: Array = _get_cells(current.type, current.rot)
-	var gy: int = current.y
-	while _is_valid(cels, current.x, gy + 1):
-		gy += 1
-	return gy
+	return BoardLogic.drop_y(board, cels, current.x, current.y)
 
 #endregion
 
