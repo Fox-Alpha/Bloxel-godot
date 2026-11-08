@@ -47,8 +47,24 @@ const OPP_CELL_FACTOR := 0.55
 const GRID_BORDER := 4
 ## Horizontaler Offset der UI-Elemente.
 const UI_OFFSET_X := 20
-## Vertikaler Offset der UI-Elemente.
-const UI_OFFSET_Y := 20
+## Schriftgröße der Statistik- und Hinweis-Labels.
+const UI_FONT_SIZE := 20
+## Schriftgröße des Game-Over-Labels.
+const GAME_OVER_FONT_SIZE := 48
+## Abstand der Statistik-Labels unter der Oberkante des Spielfelds.
+const UI_LABELS_TOP_MARGIN := 4
+## Zeilenabstand der Statistik-Labels, passend zu [constant UI_FONT_SIZE].
+const UI_LABEL_LINE_HEIGHT := 26
+## Halbe Höhe des Game-Over-Labels, damit es senkrecht mittig über dem Spielfeld steht.
+const GAME_OVER_LABEL_HALF_HEIGHT := 24
+## Abstand des NEXT-Labels über der Vorschau.
+const NEXT_LABEL_OFFSET_Y := 28
+## Abstand des Vorschau-Hintergrunds über [constant PREVIEW_Y].
+const PREVIEW_BOX_OFFSET_Y := 4
+## Abstand des Gegner-Namens über dessen Spielfeld.
+const OPPONENT_LABEL_OFFSET_Y := 24
+## Abstand der Gegner-Punkte unter dessen Spielfeld.
+const OPPONENT_SCORE_OFFSET_Y := 8
 ## Lock-Delay: Sekunden bis ein aufliegendes Stück einrastet.
 const LOCK_DELAY := 0.5
 ## Maximalanzahl Lock-Resets durch Move/Rotate bevor erzwungenes Locken.
@@ -272,7 +288,7 @@ func _draw() -> void:
 		var opp_origin := Vector2i(opp_board_x, opp_board_y)
 		GameRenderer.draw_board(self, opponent_board, opp_origin, opp_cell, GameRenderer.OPPONENT_ALPHA)
 	preview_x = board_x + COLS * CELL + GRID_BORDER * 2 + UI_OFFSET_X
-	GameRenderer.draw_preview(self, next_type, Vector2(preview_x, PREVIEW_Y - 4), CELL)
+	GameRenderer.draw_preview(self, next_type, Vector2(preview_x, PREVIEW_Y - PREVIEW_BOX_OFFSET_Y), CELL)
 	if game_over or summary.visible:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0, 0, 0, 0.55))
@@ -299,12 +315,12 @@ func _init_layout() -> void:
 
 ## Setzt konsistente Schriftgrössen für alle UI-Labels.
 func _set_ui_font_sizes() -> void:
-	var fs := 20
+	var fs := UI_FONT_SIZE
 	score_label.add_theme_font_size_override("font_size", fs)
 	lines_label.add_theme_font_size_override("font_size", fs)
 	level_label.add_theme_font_size_override("font_size", fs)
 	next_label.add_theme_font_size_override("font_size", fs)
-	game_over_label.add_theme_font_size_override("font_size", 48)
+	game_over_label.add_theme_font_size_override("font_size", GAME_OVER_FONT_SIZE)
 	opponent_score_label.add_theme_font_size_override("font_size", fs)
 	opponent_label.add_theme_font_size_override("font_size", fs)
 	time_label.add_theme_font_size_override("font_size", fs)
@@ -638,18 +654,18 @@ func _update_ui() -> void:
 
 ## Positioniert UI-Labels im _draw()-Kontext.
 func _draw_ui_labels() -> void:
-	var go_y := BOARD_Y + int(ROWS * CELL * 0.5) - 24
-	var ly := BOARD_Y + 4
+	var go_y := BOARD_Y + int(ROWS * CELL * 0.5) - GAME_OVER_LABEL_HALF_HEIGHT
+	var ly := BOARD_Y + UI_LABELS_TOP_MARGIN
 	score_label.position = Vector2(ui_x, ly)
-	lines_label.position = Vector2(ui_x, ly + 26)
-	level_label.position = Vector2(ui_x, ly + 52)
-	time_label.position = Vector2(ui_x, ly + 78)
-	round_num_label.position = Vector2(ui_x, ly + 104)
+	lines_label.position = Vector2(ui_x, ly + UI_LABEL_LINE_HEIGHT)
+	level_label.position = Vector2(ui_x, ly + UI_LABEL_LINE_HEIGHT * 2)
+	time_label.position = Vector2(ui_x, ly + UI_LABEL_LINE_HEIGHT * 3)
+	round_num_label.position = Vector2(ui_x, ly + UI_LABEL_LINE_HEIGHT * 4)
 	game_over_label.position = Vector2(board_x, go_y)
-	next_label.position = Vector2(preview_x, PREVIEW_Y - 28)
+	next_label.position = Vector2(preview_x, PREVIEW_Y - NEXT_LABEL_OFFSET_Y)
 	if is_multiplayer:
-		opponent_score_label.position = Vector2(opp_board_x, opp_board_y + ROWS * opp_cell + 8)
-		opponent_label.position = Vector2(opp_board_x, opp_board_y - 24)
+		opponent_score_label.position = Vector2(opp_board_x, opp_board_y + ROWS * opp_cell + OPPONENT_SCORE_OFFSET_Y)
+		opponent_label.position = Vector2(opp_board_x, opp_board_y - OPPONENT_LABEL_OFFSET_Y)
 
 
 ## Zeichnet Ghost Piece und aktives Stück auf das eigene Spielfeld.
