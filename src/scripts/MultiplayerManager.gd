@@ -1,3 +1,4 @@
+class_name MultiplayerManager
 extends Node
 ## ENet-Peer-Setup/Teardown und Multiplayer-Signale.
 ##

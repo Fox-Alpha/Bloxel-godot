@@ -1,3 +1,4 @@
+class_name BloxelGame
 extends Node2D
 ## Hauptspiel-Logik für Bloxel Tetris.
 ##
@@ -75,11 +76,11 @@ const OPP_TOP_GRACE := 1.5
 ## Label für den gegnerischen Namen.
 @onready var opponent_label: Label = $UI/OpponentLabel
 ## Lobby-Overlay (Start/Bereit).
-@onready var lobby: Control = $Overlays/Lobby
+@onready var lobby: Lobby = $Overlays/Lobby
 ## Summary-Overlay (Post-Game-Statistiken).
-@onready var summary: Control = $Overlays/Summary
+@onready var summary: GameSummary = $Overlays/Summary
 ## Referenz auf den MultiplayerManager (ENet).
-@onready var mp_manager: Node = $MultiplayerManager
+@onready var mp_manager: MultiplayerManager = $MultiplayerManager
 ## Label für die vergangene Spielzeit.
 @onready var time_label: Label = $UI/TimeLabel
 ## Label für die aktuelle Runde (Multiplayer).

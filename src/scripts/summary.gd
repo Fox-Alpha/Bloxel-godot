@@ -1,3 +1,4 @@
+class_name GameSummary
 extends Control
 ## Post-Game-Summary mit Statistiken, Winner-Anzeige und Rematch-Flow.
 ##
