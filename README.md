@@ -9,6 +9,7 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 - **Next-piece preview**
 - **Level & speed-up** – every 10 cleared lines increases the level and drop speed
 - **Classic scoring** – 100 / 300 / 500 / 800 per 1–4 lines cleared
+- **Single player** – *Play Again* after game over, *Quit* in the main menu
 - **2-player multiplayer** – Host/Join via IP:port (default 21277)
   - Player name input
   - Round counter (best-of-N style)
@@ -24,7 +25,6 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 | Soft drop | ↓ |
 | Hard drop | Space / Ctrl |
 | Rotate clockwise | ↑ |
-| Single-player restart (after game over) | Space |
 
 ## Multiplayer
 
@@ -47,6 +47,12 @@ cd src && godot --headless -s plug.gd install
 Then open `src/project.godot` with Godot 4.7. The main scene is `res://scenes/main/main.tscn`. See [docs/addons.md](docs/addons.md)
 for the addons in use.
 
+Run the unit tests from `src/`:
+
+```bash
+godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
+
 ## Tech
 
 | | |
@@ -58,7 +64,7 @@ for the addons in use.
 
 ## License
 
-MIT License
+[MIT License](LICENSE)
 
 ## Credits
 
