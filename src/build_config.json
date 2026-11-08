@@ -1,27 +1,27 @@
 {
   "godot": {
-    "path": "/home/buckdi/Projekte/godot/engine/godot-4.7_stable/Godot_v4.7-stable_linux.x86_64",
+    "path": "",
     "version": "4.7"
   },
   "build": {
-    "project_name": "ai-tetris-deepseek",
-    "version_suffix": "dev",
-    "export_root": ".exports",
+    "project_name": "bloxel",
+    "version_suffix": "",
+    "export_root": "../builds",
     "export_path": "",
-    "output_filename": "{project}_{date}_{os}_{type}",
+    "output_filename": "{project}_{version}_{type}",
     "use_separators": true
   },
   "profiles": [
     {
       "name": "Linux",
-      "type": "export-debug",
+      "type": "export-release",
       "platform": "Linux",
       "output_filename": "",
       "export_path": ""
     },
     {
       "name": "Windows",
-      "type": "export-debug",
+      "type": "export-release",
       "platform": "Windows Desktop",
       "output_filename": "",
       "export_path": ""

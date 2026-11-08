@@ -27,7 +27,7 @@ ios/
 !/.reference/.gitkeep
 
 # Export builds
-.exports/
+/builds/
 
 # Import log (.import-Dateien gehören ins Repo, sie tragen die UIDs)
 .import.log.txt
