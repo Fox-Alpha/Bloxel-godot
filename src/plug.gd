@@ -10,7 +10,11 @@ extends "res://addons/gd-plug/plug.gd"
 ## Deklariert die Addons. Standardmäßig wird nur der Ordner [code]addons/[/code] eines Repos installiert.
 func _plugging() -> void:
 	# Werkzeuge
-	plug("GDQuest/GDScript-formatter", {"dev": true})
+	# Nur die Editor-Variante: Der Variante "standalone" fehlt im Repo die kompilierte Bibliothek.
+	plug("GDQuest/GDScript-formatter", {
+		"dev": true,
+		"include": ["addons/GDQuest_GDScript_formatter/"],
+	})
 
 	# MCP: Version gemeinsam mit dem Server-Pin in ~/.claude.json halten
 	plug("hi-godot/godot-ai", {
