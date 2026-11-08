@@ -53,6 +53,8 @@ func _ready() -> void:
 	mp_manager.join_failed.connect(_on_join_failed)
 	mp_manager.peer_disconnected.connect(_on_peer_disconnected)
 	mp_manager.game_start_requested.connect(_on_game_start_requested)
+	if OS.is_debug_build():
+		add_child(DevAutostart.new())
 
 
 func _update_status(msg: String) -> void:
