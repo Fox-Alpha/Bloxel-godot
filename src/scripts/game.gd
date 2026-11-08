@@ -26,7 +26,7 @@ enum PieceType {
 ## Spalten im Spielfeld.
 const COLS := 10
 ## Sichtbare Reihen im Spielfeld.
-const ROWS := 19
+const ROWS := 20
 ## Versteckte Reihen oberhalb des sichtbaren Bereichs (Spawn-Schutz).
 const HIDDEN := 2
 ## Gesamtreihen inklusive verstecktem Bereich.
