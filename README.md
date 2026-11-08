@@ -37,7 +37,15 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 
 ## Development Setup
 
-Open `src/project.godot` with Godot 4.7. The main scene is `res://main.tscn`.
+Addons are not part of the repository. Install them with [gd-plug](https://github.com/Fox-Alpha/fork-gd-plug) before
+opening the project (editor closed):
+
+```bash
+cd src && godot --headless -s plug.gd install
+```
+
+Then open `src/project.godot` with Godot 4.7. The main scene is `res://main.tscn`. See [docs/addons.md](docs/addons.md)
+for the addons in use.
 
 ## Tech
 
