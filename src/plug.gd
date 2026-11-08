@@ -31,8 +31,8 @@ func _plugging() -> void:
 		"install_root": "addons/godot_ai",
 	})
 
-	# Unit-Tests (geplant)
-	#plug("bitwes/Gut", {"dev": true, "tag": "v9.7.1"})
+	# Unit-Tests
+	plug("bitwes/Gut", {"dev": true, "tag": "v9.7.1"})
 
 	# Discord-Anbindung (zurückgestellt, siehe Branch feature/addon_discord_rpc). Tag beim Aktivieren festlegen.
 	#plug("https://codeberg.org/DiscordGodot/RPC-Legacy.git")
