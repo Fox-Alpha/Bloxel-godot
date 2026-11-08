@@ -1,13 +1,183 @@
-# ai-tetris-deepseek
+# Bloxel
 
-Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. Die Reihenfolge der Typen ist Add → Fix → Upd → Chg → Del → Docs → Ref → Mve → Rem → Ren → sonstige.
+Die folgenden Einträge wurden automatisch aus der Git-Historie generiert. Die Reihenfolge der Typen ist Add → Chg → Upd → Ref → Rem → Fix → Docs → Ren → Mov → Cfg → Fmt → sonstige.
+
+## 2026-11-08
+
+- Add: MIT-Lizenz [4df4073](https://github.com/Fox-Alpha/Bloxel-godot/commit/4df4073)
+- Add: Unit-Tests für die Gewinner-Bestimmung (#14) [cabd9e7](https://github.com/Fox-Alpha/Bloxel-godot/commit/cabd9e7)
+- Add: Button zum Beenden im Hauptmenü (#27) [6d4de75](https://github.com/Fox-Alpha/Bloxel-godot/commit/6d4de75)
+- Add: Button für neue Runde nach dem Einzelspiel (#26) [1db6ff7](https://github.com/Fox-Alpha/Bloxel-godot/commit/1db6ff7)
+- Add: Unit-Tests für GameInput (#20) [8d5d263](https://github.com/Fox-Alpha/Bloxel-godot/commit/8d5d263)
+- Add: Unit-Tests für BoardLogic (#20) [45e395f](https://github.com/Fox-Alpha/Bloxel-godot/commit/45e395f)
+- Add: Unit-Tests für PieceData (#17) [8e85194](https://github.com/Fox-Alpha/Bloxel-godot/commit/8e85194)
+- Add: Unit-Tests für BoardCodec (#17) [07696af](https://github.com/Fox-Alpha/Bloxel-godot/commit/07696af)
+- Add: Dev-Autostart für mehrere Debug-Instanzen (#23) [502cdab](https://github.com/Fox-Alpha/Bloxel-godot/commit/502cdab)
+- Chg: Endwerte beim Spielende im Log festgehalten (#11) [5894c59](https://github.com/Fox-Alpha/Bloxel-godot/commit/5894c59)
+- Chg: Fenstertitel zeigt Rolle und PID (#24) [7de7dc3](https://github.com/Fox-Alpha/Bloxel-godot/commit/7de7dc3)
+- Chg: Logausgaben auf log.gd umgestellt (#24) [a55df9b](https://github.com/Fox-Alpha/Bloxel-godot/commit/a55df9b)
+- Upd: Version 0.20.0-rc1 [a808b71](https://github.com/Fox-Alpha/Bloxel-godot/commit/a808b71)
+- Upd: Spielfeld von 19 auf 20 sichtbare Reihen (#6) [bd5705e](https://github.com/Fox-Alpha/Bloxel-godot/commit/bd5705e)
+- Ref: Pixelwerte der UI-Labels als benannte Konstanten (#16) [a41c3b2](https://github.com/Fox-Alpha/Bloxel-godot/commit/a41c3b2)
+- Ref: Lobby bekommt den MultiplayerManager per @export (#18) [172fbab](https://github.com/Fox-Alpha/Bloxel-godot/commit/172fbab)
+- Ref: show_summary bekommt einen SummaryContext statt acht Parameter (#14) [8051bef](https://github.com/Fox-Alpha/Bloxel-godot/commit/8051bef)
+- Ref: Regionen in Lobby, Summary und MultiplayerManager ergänzt (#29) [9c2ab5e](https://github.com/Fox-Alpha/Bloxel-godot/commit/9c2ab5e)
+- Ref: main.gd nach den festen Regionen des Styleguides geordnet (#29) [d397def](https://github.com/Fox-Alpha/Bloxel-godot/commit/d397def)
+- Ref: class_name für die übrigen Scripts und typisierte Node-Referenzen (#15) [259a523](https://github.com/Fox-Alpha/Bloxel-godot/commit/259a523)
+- Ref: Eingabe und DAS nach GameInput ausgelagert (#20) [32920a9](https://github.com/Fox-Alpha/Bloxel-godot/commit/32920a9)
+- Ref: Zeichencode nach GameRenderer ausgelagert (#20) [4f3e2aa](https://github.com/Fox-Alpha/Bloxel-godot/commit/4f3e2aa)
+- Ref: Board-Regeln nach BoardLogic ausgelagert (#20) [d0c568b](https://github.com/Fox-Alpha/Bloxel-godot/commit/d0c568b)
+- Ref: Dev-Autostart ruft Log direkt auf (#24) [e058ad3](https://github.com/Fox-Alpha/Bloxel-godot/commit/e058ad3)
+- Rem: Statistik eines fremden Projekts aus docs/ [7b59f81](https://github.com/Fox-Alpha/Bloxel-godot/commit/7b59f81)
+- Rem: veraltete KI-Reviews aus docs/ [3a94fa0](https://github.com/Fox-Alpha/Bloxel-godot/commit/3a94fa0)
+- Rem: ungenutztes Engine-Icon godot.svg (#29) [5cb4878](https://github.com/Fox-Alpha/Bloxel-godot/commit/5cb4878)
+- Rem: nicht erreichbarer Neustart per Hard-Drop-Taste (#26) [3181acf](https://github.com/Fox-Alpha/Bloxel-godot/commit/3181acf)
+- Rem: veraltete OpenCode-Handbücher entfernt [a82b23c](https://github.com/Fox-Alpha/Bloxel-godot/commit/a82b23c)
+- Rem: OpenCode-Altlasten entfernt [c5cc83f](https://github.com/Fox-Alpha/Bloxel-godot/commit/c5cc83f)
+- Fix: Soft Drop sprang beim Drücken mehrere Zeilen (#28) [e6e583a](https://github.com/Fox-Alpha/Bloxel-godot/commit/e6e583a)
+- Fix: Spiel-Labels hinter der Lobby ausgeblendet (#22) [5e78141](https://github.com/Fox-Alpha/Bloxel-godot/commit/5e78141)
+- Fix: Endwerte des Gewinners fehlten beim Verlierer (#11) [fdad494](https://github.com/Fox-Alpha/Bloxel-godot/commit/fdad494)
+- Fix: ungültige UID von icon.svg in der Lobby [bd4c8a0](https://github.com/Fox-Alpha/Bloxel-godot/commit/bd4c8a0)
+- Docs: README auf den aktuellen Stand gebracht [26839ca](https://github.com/Fox-Alpha/Bloxel-godot/commit/26839ca)
+- Docs: Überschrift von ideen.md angepasst [98dcd48](https://github.com/Fox-Alpha/Bloxel-godot/commit/98dcd48)
+- Docs: SummaryContext in der Script-Übersicht (#14) [49eebcc](https://github.com/Fox-Alpha/Bloxel-godot/commit/49eebcc)
+- Docs: überholten Kommentar in dev_autostart.gd korrigiert (#13) [e51eee7](https://github.com/Fox-Alpha/Bloxel-godot/commit/e51eee7)
+- Docs: Rückgabe- und Parameterzeilen der Hilfsklassen vereinheitlicht (#13) [6e431d0](https://github.com/Fox-Alpha/Bloxel-godot/commit/6e431d0)
+- Docs: Docstrings für die Auswertung ergänzt (#13) [b6bf9cf](https://github.com/Fox-Alpha/Bloxel-godot/commit/b6bf9cf)
+- Docs: Docstrings für die Lobby ergänzt (#13) [a697e53](https://github.com/Fox-Alpha/Bloxel-godot/commit/a697e53)
+- Docs: Docstrings für MultiplayerManager ergänzt (#13) [2ba8e9d](https://github.com/Fox-Alpha/Bloxel-godot/commit/2ba8e9d)
+- Docs: Docstrings in main.gd vereinheitlicht (#13) [96f0f62](https://github.com/Fox-Alpha/Bloxel-godot/commit/96f0f62)
+- Docs: main.gd in der Script-Übersicht (#29) [49d67e2](https://github.com/Fox-Alpha/Bloxel-godot/commit/49d67e2)
+- Docs: Pfade nach dem Umzug der Szenen aktualisiert (#29) [3b31694](https://github.com/Fox-Alpha/Bloxel-godot/commit/3b31694)
+- Docs: Script-Übersicht und Roadmap nach dem Split von game.gd (#20) [73689c7](https://github.com/Fox-Alpha/Bloxel-godot/commit/73689c7)
+- Docs: Board-Logik-Tests in der Roadmap zu #20 verschoben (#17) [edbfeb4](https://github.com/Fox-Alpha/Bloxel-godot/commit/edbfeb4)
+- Docs: Aufruf der Unit-Tests beschrieben (#17) [a5f4609](https://github.com/Fox-Alpha/Bloxel-godot/commit/a5f4609)
+- Docs: log.gd in der Addon-Übersicht als aktiv geführt (#24) [b5ea8e2](https://github.com/Fox-Alpha/Bloxel-godot/commit/b5ea8e2)
+- Docs: Testen mit zwei Instanzen in CLAUDE.md (#23) [4c2d477](https://github.com/Fox-Alpha/Bloxel-godot/commit/4c2d477)
+- Docs: Issue-Dateien entfernt, GitHub ist einzige Quelle [1b6def7](https://github.com/Fox-Alpha/Bloxel-godot/commit/1b6def7)
+- Docs: Issue-Datei zu #6 entfernt (#6) [c4db855](https://github.com/Fox-Alpha/Bloxel-godot/commit/c4db855)
+- Docs: GitHub-Nummern in die Issue-Dateien eingetragen [6f5c664](https://github.com/Fox-Alpha/Bloxel-godot/commit/6f5c664)
+- Docs: erledigte Issue-Dateien entfernt [725be9e](https://github.com/Fox-Alpha/Bloxel-godot/commit/725be9e)
+- Docs: Roadmap auf GitHub-Nummern und neue Reihenfolge gebracht [1e5a027](https://github.com/Fox-Alpha/Bloxel-godot/commit/1e5a027)
+- Docs: Feature-Request zu Discord Rich Presence festgehalten (#21) [368ede8](https://github.com/Fox-Alpha/Bloxel-godot/commit/368ede8)
+- Docs: Issue-Entwürfe an aktuellen Stand angepasst [0c767d2](https://github.com/Fox-Alpha/Bloxel-godot/commit/0c767d2)
+- Docs: Addon-Installation im README beschrieben [ae84546](https://github.com/Fox-Alpha/Bloxel-godot/commit/ae84546)
+- Docs: Addon-Übersicht in docs/addons.md [3b101ed](https://github.com/Fox-Alpha/Bloxel-godot/commit/3b101ed)
+- Docs: CHANGELOG aus der Git-Historie neu erzeugt [7adf7b6](https://github.com/Fox-Alpha/Bloxel-godot/commit/7adf7b6)
+- Docs: README auf aktuellen Stand gebracht [6a271cd](https://github.com/Fox-Alpha/Bloxel-godot/commit/6a271cd)
+- Docs: Projekt-CLAUDE.md angelegt [abf2e62](https://github.com/Fox-Alpha/Bloxel-godot/commit/abf2e62)
+- Ren: docs/refactor.md in ideen.md, der Inhalt sind Erweiterungsideen [6d4a30b](https://github.com/Fox-Alpha/Bloxel-godot/commit/6d4a30b)
+- Ren: Region Public API in Static Funcs (#29) [b93f733](https://github.com/Fox-Alpha/Bloxel-godot/commit/b93f733)
+- Ren: game.gd in main.gd, passend zur Szene main.tscn (#29) [188599f](https://github.com/Fox-Alpha/Bloxel-godot/commit/188599f)
+- Ren: docs/Gameplay_Herausforderungen.md in Kleinschreibung (#29) [6bd4bf5](https://github.com/Fox-Alpha/Bloxel-godot/commit/6bd4bf5)
+- Ren: Issue-Dateien nach Vorlage benannt [c3ac0e1](https://github.com/Fox-Alpha/Bloxel-godot/commit/c3ac0e1)
+- Mov: Summary-Szene und summary.gd nach scenes/summary (#29) [132a611](https://github.com/Fox-Alpha/Bloxel-godot/commit/132a611)
+- Mov: Lobby-Szene und lobby.gd nach scenes/lobby (#29) [80c962d](https://github.com/Fox-Alpha/Bloxel-godot/commit/80c962d)
+- Mov: MultiplayerManager als multiplayer_manager.gd nach scenes/main (#29) [1858906](https://github.com/Fox-Alpha/Bloxel-godot/commit/1858906)
+- Mov: Hauptszene und game.gd nach scenes/main (#29) [02d8689](https://github.com/Fox-Alpha/Bloxel-godot/commit/02d8689)
+- Cfg: Issue-Vorlagen durch die der Projektvorlage ersetzt [f1d011d](https://github.com/Fox-Alpha/Bloxel-godot/commit/f1d011d)
+- Cfg: .editorconfig aus der Projektvorlage übernommen (#29) [82e5a01](https://github.com/Fox-Alpha/Bloxel-godot/commit/82e5a01)
+- Cfg: Tests und GUT vom Export ausgeschlossen (#17) [6f560ee](https://github.com/Fox-Alpha/Bloxel-godot/commit/6f560ee)
+- Cfg: GUT über gd-plug aktiviert und Plugin eingeschaltet (#17) [489b808](https://github.com/Fox-Alpha/Bloxel-godot/commit/489b808)
+- Cfg: log.gd über plug.gd eingebunden (#24) [7edebd2](https://github.com/Fox-Alpha/Bloxel-godot/commit/7edebd2)
+- Cfg: Logordner für Debug-Instanzen (#23) [8a78f73](https://github.com/Fox-Alpha/Bloxel-godot/commit/8a78f73)
+- Cfg: lokale Issue-Kopie unter docs/issues/ ignoriert [09f3887](https://github.com/Fox-Alpha/Bloxel-godot/commit/09f3887)
+- Cfg: Fensterhöhe auf 720 px angehoben (#6) [909c9ec](https://github.com/Fox-Alpha/Bloxel-godot/commit/909c9ec)
+- Cfg: UID von plug.gd aufgenommen [2ac9b88](https://github.com/Fox-Alpha/Bloxel-godot/commit/2ac9b88)
+- Cfg: Formatter auf die Editor-Variante beschränkt [120ef2a](https://github.com/Fox-Alpha/Bloxel-godot/commit/120ef2a)
+- Cfg: Addon-Liste in plug.gd angelegt [1a9e4d2](https://github.com/Fox-Alpha/Bloxel-godot/commit/1a9e4d2)
+- Cfg: gd-plug v0.3.0 eingerichtet [db32bcb](https://github.com/Fox-Alpha/Bloxel-godot/commit/db32bcb)
+- Cfg: .import-Dateien versioniert, Linter-Cache ignoriert [9c4c4b4](https://github.com/Fox-Alpha/Bloxel-godot/commit/9c4c4b4)
+- Cfg: verwaisten Submodul-Eintrag entfernt [f78ea94](https://github.com/Fox-Alpha/Bloxel-godot/commit/f78ea94)
+- Cfg: Addon godot_ai aus dem Git-Tracking genommen [15af08a](https://github.com/Fox-Alpha/Bloxel-godot/commit/15af08a)
+- Fmt: Scripts mit der neuen .editorconfig formatiert (#29) [b19c326](https://github.com/Fox-Alpha/Bloxel-godot/commit/b19c326)
+- Fmt: dev_autostart.gd formatiert (#23) [232ebac](https://github.com/Fox-Alpha/Bloxel-godot/commit/232ebac)
+
+## 2026-08-09
+
+- Add: Refactor  Review und Roadmap [97f956c](https://github.com/Fox-Alpha/Bloxel-godot/commit/97f956c)
+- Upd: .gitignore [61e106c](https://github.com/Fox-Alpha/Bloxel-godot/commit/61e106c)
+- Upd: .gitignore [161e9ef](https://github.com/Fox-Alpha/Bloxel-godot/commit/161e9ef)
+- Upd: .gitignore [7351100](https://github.com/Fox-Alpha/Bloxel-godot/commit/7351100)
+- Rem: Addon Ordner aus Historie entfernt [0c80269](https://github.com/Fox-Alpha/Bloxel-godot/commit/0c80269)
+- Revert "Merge pull request #12 from Fox-Alpha/feature/refactor-bugs-and-structure" [ff608da](https://github.com/Fox-Alpha/Bloxel-godot/commit/ff608da)
+
+## 2026-07-11
+
+- Docs: add GitHub issue numbers to filenames, create #10 and #11 [d20adb6](https://github.com/Fox-Alpha/Bloxel-godot/commit/d20adb6)
+
+## 2026-07-10
+
+- Ref: bug fixes + structural improvements [b66e96d](https://github.com/Fox-Alpha/Bloxel-godot/commit/b66e96d)
+- Ref: extract PieceData and BoardCodec from game.gd [b500558](https://github.com/Fox-Alpha/Bloxel-godot/commit/b500558)
+- Docs: mark 5 fixed issues as done [86e5dc7](https://github.com/Fox-Alpha/Bloxel-godot/commit/86e5dc7)
+- Chore: reorder MultiplayerManager node, update MCP config, add GLM-5.2 review [e324910](https://github.com/Fox-Alpha/Bloxel-godot/commit/e324910)
+
+## 2026-07-09
+
+- LF [6419496](https://github.com/Fox-Alpha/Bloxel-godot/commit/6419496)
+
+## 2026-07-08
+
+- Add: Berechtigung zum lesemn der Template Ordner [4c9b7ca](https://github.com/Fox-Alpha/Bloxel-godot/commit/4c9b7ca)
+- Add: Verzeichnisse um .submodule/ erweitert [486709d](https://github.com/Fox-Alpha/Bloxel-godot/commit/486709d)
+- Add: eigene Godot MCP erweiterungen eingefügt [5977e6a](https://github.com/Fox-Alpha/Bloxel-godot/commit/5977e6a)
+- Chg: Verzeichnisstruktur anpasst [77f17af](https://github.com/Fox-Alpha/Bloxel-godot/commit/77f17af)
+- Upd: Anweisungen ergänzt [f2d8689](https://github.com/Fox-Alpha/Bloxel-godot/commit/f2d8689)
+- Upd: *ignore Dateien ergänzt / korrigiert [94e9afb](https://github.com/Fox-Alpha/Bloxel-godot/commit/94e9afb)
+- Upd: lokale Konfiguration für Berechtigungen verfeinert [034e001](https://github.com/Fox-Alpha/Bloxel-godot/commit/034e001)
+- Upd: Ein paar Punkte verfeinert. [644329a](https://github.com/Fox-Alpha/Bloxel-godot/commit/644329a)
+- Upd: Konfiguration für Projekt opncode.json erweitert [325e84f](https://github.com/Fox-Alpha/Bloxel-godot/commit/325e84f)
+- Rem: Lokal Ollama Model Block entfernt [7ac0b0e](https://github.com/Fox-Alpha/Bloxel-godot/commit/7ac0b0e)
+- Fix: Template für Godot Projekt [4ba2c04](https://github.com/Fox-Alpha/Bloxel-godot/commit/4ba2c04)
+- Fix: Key=value korrigiert [62707b9](https://github.com/Fox-Alpha/Bloxel-godot/commit/62707b9)
+
+## 2026-07-07
+
+- Add: Dateien aus dem Userverzeichnis [248c51f](https://github.com/Fox-Alpha/Bloxel-godot/commit/248c51f)
+- Add: Versuch einen Agent zur Boldgenerierung zu erstellen [6d06a02](https://github.com/Fox-Alpha/Bloxel-godot/commit/6d06a02)
+- Add: neuen Agent für das Dokumentieren des Quellcodes [b892ce6](https://github.com/Fox-Alpha/Bloxel-godot/commit/b892ce6)
+- Upd: Eingige Konfig Option in die oc.json angepasst [1cd5ea3](https://github.com/Fox-Alpha/Bloxel-godot/commit/1cd5ea3)
+- Upd: Unterordner von .disabled hinzugefügt [35a1590](https://github.com/Fox-Alpha/Bloxel-godot/commit/35a1590)
+- Upd: Erweiterung und verfeinern des Agents. Zugriff und Nutzung von verschiedenen Tools / MCP [e157ee8](https://github.com/Fox-Alpha/Bloxel-godot/commit/e157ee8)
+- Upd: Autoupdate der UID's nach öffnen im Editor [9670027](https://github.com/Fox-Alpha/Bloxel-godot/commit/9670027)
+- Upd: Script per Agent dokumentieren lassen. 1. Iteration [0b17288](https://github.com/Fox-Alpha/Bloxel-godot/commit/0b17288)
+- Upd: Entfernt das der Src getrennt werden muss [f097604](https://github.com/Fox-Alpha/Bloxel-godot/commit/f097604)
+- Rem: Temporär das Log Addon deaktivier [15cc58a](https://github.com/Fox-Alpha/Bloxel-godot/commit/15cc58a)
+- Mve: Verschieben der Godot Source in einen eigenen Ordner [f7dc06b](https://github.com/Fox-Alpha/Bloxel-godot/commit/f7dc06b)
+
+## 2026-07-06
+
+- Add: Screenshot to Readme [31632dc](https://github.com/Fox-Alpha/Bloxel-godot/commit/31632dc)
+- Add: Vorlagen für GitHub Issues [ccefe5f](https://github.com/Fox-Alpha/Bloxel-godot/commit/ccefe5f)
+- Add: ISSUE Templates für Githun Issues [a976438](https://github.com/Fox-Alpha/Bloxel-godot/commit/a976438)
+- Add: Log.gd als Submoduke [68b731b](https://github.com/Fox-Alpha/Bloxel-godot/commit/68b731b)
+- Add: Liste mit Erweiterungen [dbcc553](https://github.com/Fox-Alpha/Bloxel-godot/commit/dbcc553)
+- Add: Liste mit möglichen Erweiterungen für Single- und Multiplayer [a969c12](https://github.com/Fox-Alpha/Bloxel-godot/commit/a969c12)
+- Add: Code-Review mit Vorschlägen. [467a671](https://github.com/Fox-Alpha/Bloxel-godot/commit/467a671)
+- Add: godot-api-audit agent for read-only API compatibility checks [e743451](https://github.com/Fox-Alpha/Bloxel-godot/commit/e743451)
+- Chg: rename master to main, add note about future src/ migration [c5d3c59](https://github.com/Fox-Alpha/Bloxel-godot/commit/c5d3c59)
+- Chg: migrate .github/ instructions to .opencode/ + global ~/.config/opencode/ [2373767](https://github.com/Fox-Alpha/Bloxel-godot/commit/2373767)
+- Upd: Update issue templates [23dcdde](https://github.com/Fox-Alpha/Bloxel-godot/commit/23dcdde)
+- Upd: Binaryformate explizit aufgenommen [d1018a0](https://github.com/Fox-Alpha/Bloxel-godot/commit/d1018a0)
+- Upd: Anpassung der GIT Lineendings Option [a01fb16](https://github.com/Fox-Alpha/Bloxel-godot/commit/a01fb16)
+- Upd: add Godot version sanity check for LLMs [b32ad3f](https://github.com/Fox-Alpha/Bloxel-godot/commit/b32ad3f)
+- Fix: repair readme-specialist agent for OpenCode compat (remove invalid tools field) [b9910fe](https://github.com/Fox-Alpha/Bloxel-godot/commit/b9910fe)
+- Ren: Issue Templates [d2a39ea](https://github.com/Fox-Alpha/Bloxel-godot/commit/d2a39ea)
 
 ## 2026-07-05
 
-- Add: godot-export-mcp MCP server (export_build + export_generate_config); register in user-level config; update docs 2149824
-- Add: OpenCode MCP configuration for Godot LSP bridge ae8640a
-- Add: core Tetris game logic, multiplayer, UI scenes and HUD c10cabb
-- Add: Godot-AI MCP plugin addon for editor automation e1c7068
-- Add: initial project setup with Godot 4 config and icons 12c93d3
-- Fix: opencode.json MCP command with full uv path and cwd; add CHANGELOG.md b021215
-- Chg: move godot-lsp MCP to user-level config; add docs/GUIDE.md, docs/AI_CONTEXT.md; update README a1ae0d4
+- Add: godot-export-mcp MCP server (export_build + export_generate_config); register in user-level config; update docs [2149824](https://github.com/Fox-Alpha/Bloxel-godot/commit/2149824)
+- Add: OpenCode MCP configuration for Godot LSP bridge [ae8640a](https://github.com/Fox-Alpha/Bloxel-godot/commit/ae8640a)
+- Add: core Tetris game logic, multiplayer, UI scenes and HUD [c10cabb](https://github.com/Fox-Alpha/Bloxel-godot/commit/c10cabb)
+- Add: Godot-AI MCP plugin addon for editor automation [e1c7068](https://github.com/Fox-Alpha/Bloxel-godot/commit/e1c7068)
+- Add: initial project setup with Godot 4 config and icons [12c93d3](https://github.com/Fox-Alpha/Bloxel-godot/commit/12c93d3)
+- Chg: add build artifacts to .gitignore; remove .exports/ .import.log.txt build_config.json from tracking [e43abfe](https://github.com/Fox-Alpha/Bloxel-godot/commit/e43abfe)
+- Chg: move godot-lsp MCP to user-level config; add docs/GUIDE.md, docs/AI_CONTEXT.md; update README [a1ae0d4](https://github.com/Fox-Alpha/Bloxel-godot/commit/a1ae0d4)
+- Upd: export_presets.cfg expanded by Godot 4.7 headless export; add keep_versions + per-binary logs to godot-export-mcp [dec7e84](https://github.com/Fox-Alpha/Bloxel-godot/commit/dec7e84)
+- Upd: auto-create missing export presets in export_presets.cfg; track export config [f4fdd93](https://github.com/Fox-Alpha/Bloxel-godot/commit/f4fdd93)
+- Upd: export_generate_config now reads export_presets.cfg and shows available profiles; add show_only/profile_names params [dfbc69e](https://github.com/Fox-Alpha/Bloxel-godot/commit/dfbc69e)
+- Fix: build_config.json platform='Windows Desktop' for Godot 4 Windows exports [d187baa](https://github.com/Fox-Alpha/Bloxel-godot/commit/d187baa)
+- Fix: Windows export preset uses platform='Windows Desktop'; export_build now auto-creates missing presets on-the-fly [c13d267](https://github.com/Fox-Alpha/Bloxel-godot/commit/c13d267)
+- Fix: add .exports/ .import.log.txt build_config.json to .gitignore [9114052](https://github.com/Fox-Alpha/Bloxel-godot/commit/9114052)
+- Fix: opencode.json MCP command with full uv path and cwd; add CHANGELOG.md [b021215](https://github.com/Fox-Alpha/Bloxel-godot/commit/b021215)

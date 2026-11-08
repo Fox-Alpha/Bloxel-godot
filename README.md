@@ -1,7 +1,5 @@
 # Bloxel<img width="1284" height="807" alt="Bildschirmfoto_Bloxel  PID: 8373 _06-Juli-2026_1805_01" src="https://github.com/user-attachments/assets/b0fb6a7b-75d4-49f5-8c4e-01d68b626c8b" />
 
-> weitere Screenshots im Ordner 'media'
-
 A free, open-source Tetris-like block-stacking game built with **Godot 4**, featuring classic mechanics, ghost piece, next-piece preview, speed progression, and 2-player multiplayer over LAN/internet.
 
 ## Features
@@ -11,6 +9,7 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 - **Next-piece preview**
 - **Level & speed-up** – every 10 cleared lines increases the level and drop speed
 - **Classic scoring** – 100 / 300 / 500 / 800 per 1–4 lines cleared
+- **Single player** – *Play Again* after game over, *Quit* in the main menu
 - **2-player multiplayer** – Host/Join via IP:port (default 21277)
   - Player name input
   - Round counter (best-of-N style)
@@ -26,7 +25,6 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 | Soft drop | ↓ |
 | Hard drop | Space / Ctrl |
 | Rotate clockwise | ↑ |
-| Single-player restart (after game over) | Space |
 
 ## Multiplayer
 
@@ -39,11 +37,21 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 
 ## Development Setup
 
-Dieses Projekt wird mit [OpenCode](https://opencode.ai) und KI-Assistenz entwickelt.
-Drei MCP-Server stellen Werkzeuge für Editor-Automation, Code-Analyse und Build bereit.
+Addons are not part of the repository. Install them with [gd-plug](https://github.com/Fox-Alpha/fork-gd-plug) before
+opening the project (editor closed):
 
-Siehe [docs/GUIDE.md](docs/GUIDE.md) für Einrichtung, Konfiguration und Bedienung.
-Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_CONTEXT.md).
+```bash
+cd src && godot --headless -s plug.gd install
+```
+
+Then open `src/project.godot` with Godot 4.7. The main scene is `res://scenes/main/main.tscn`. See [docs/addons.md](docs/addons.md)
+for the addons in use.
+
+Run the unit tests from `src/`:
+
+```bash
+godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
 
 ## Tech
 
@@ -54,22 +62,10 @@ Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_
 | Networking | ENet (built-in) |
 | UI | Responsive layout, adapts to window size |
 
-### Code Stats
-
-| Component | Lines |
-|-----------|-------|
-| Game logic (`game.gd`) | 855 |
-| Lobby / menu (`lobby.gd`) | 152 |
-| Summary screen (`summary.gd`) | 101 |
-| Multiplayer manager (`MultiplayerManager.gd`) | 89 |
-| **Total GDScript** | **1,197** |
-| Scene files (`*.tscn`) | 308 |
-| **Total project** | **~1,500 lines** |
-
 ## License
 
-MIT License – see [LICENSE](LICENSE) for details.
+[MIT License](LICENSE)
 
 ## Credits
 
-Developed by **Fox-Alpha** with AI assistance via [opencode](https://opencode.ai).
+Developed by **Fox-Alpha** with AI assistance.

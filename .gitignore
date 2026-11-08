@@ -7,18 +7,36 @@ ios/
 # Disabled addons
 **/.disabled/**
 !**/.disabled/.gdignore
-addons/
-!addons/addons_used.md
+
+# Addons holt gd-plug anhand von src/plug.gd. Versioniert wird nur gd-plug selbst.
+.plugged/
+/src/addons/*
+!/src/addons/gd-plug/
+!/src/addons/.disabled/
+
+# Lokale Kopie der GitHub-Issues (git issues)
+/docs/issues/*
+!/docs/issues/README.md
+
+# Logs der Debug-Instanzen
+/src/logs/*
+!/src/logs/.gitkeep
+
+# Ablage für fremde Dateien und Vorlagen (nur lokal)
+/.reference/*
+!/.reference/.gitkeep
 
 # Export builds
 .exports/
 
-# Import metadata
+# Import log (.import-Dateien gehören ins Repo, sie tragen die UIDs)
 .import.log.txt
-*.import
 
 # Godot LSP / Editor cache
 .godot/
+
+# Python-Linter-Cache
+.ruff_cache/
 
 # OS junk
 .DS_Store
