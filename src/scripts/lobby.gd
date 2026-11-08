@@ -1,3 +1,4 @@
+class_name Lobby
 extends Control
 
 signal single_player_requested()
@@ -13,7 +14,7 @@ signal game_started()
 @onready var join_button: Button = $VBox/JoinButton
 @onready var status_label: Label = $VBox/StatusLabel
 @onready var quit_button: Button = $VBox/QuitButton
-@onready var mp_manager = get_node("/root/Main/MultiplayerManager")
+@onready var mp_manager: MultiplayerManager = get_node("/root/Main/MultiplayerManager")
 
 var _connecting: bool = false
 var player_name: String = ""
