@@ -1,101 +1,34 @@
 # Refactoring Roadmap
 
-Empfohlene Umsetzungsreihenfolge für die offenen Issues (#13–#20).
+Abgeschlossen am 2026-11-08, erster Stand danach ist `v0.20.0-rc1`. Die Details stehen in den Issues und Merge-Commits.
 
----
+## Ergebnis
 
-## Übersicht
+Reihenfolge wie umgesetzt:
 
-```
-#17 Unit Tests (BoardCodec, PieceData)
- └─► #20 game.gd Split
-      └─► #15 class_name-Deklarationen
-           ├─► #13 Docstrings konsistent
-           ├─► #14 show_summary() Parameter
-           ├─► #18 lobby hardcoded path
-           └─► #19 Translations
-                └─► #16 Magic Numbers UI
-```
+| Issue | Thema | Ergebnis | Merge |
+|---|---|---|---|
+| #17 | Unit-Tests | GUT eingebunden, Tests in `src/tests/` | `5556e12` |
+| #20 | `game.gd` aufteilen | `BoardLogic`, `GameRenderer` und `GameInput` ausgelagert | `8b8c7ba` |
+| #15 | `class_name` | `BloxelGame`, `Lobby`, `GameSummary`, `MultiplayerManager`, typisierte Node-Referenzen | `34cd677` |
+| #29 | Styleguide-Konventionen | Szenen unter `src/scenes/<feature>/`, `game.gd` heißt `main.gd`, feste Regionen, `.editorconfig` | `477d8b3` |
+| #13 | Docstrings | Jede Funktion und jedes Signal dokumentiert, Rückgabe im Godot-Format | `313105e` |
+| #14 | `show_summary()` | Data-Klasse `SummaryContext`, Gewinner-Bestimmung getestet | `693eab9` |
+| #18 | Fester Pfad in der Lobby | `MultiplayerManager` per `@export` aus `main.tscn` | `690b116` |
+| #16 | Magic Numbers der UI | Benannte Konstanten in `main.gd` | `c992ec3` |
 
----
+## Bewusste Abweichungen von der Planung
 
-## Phase 1 — Fundament
+- `main.gd` hat nach dem Split rund 880 Zeilen statt der geschätzten ~300. Übrig sind vor allem Zustandsvariablen,
+  Multiplayer mit RPCs und Game Over. Ein eigenes `game_multiplayer.gd` wäre der größte weitere Hebel.
+- Lock Delay und UI-Labels bleiben in `main.gd`: Der Lock Delay ist eine Spielregel, die Labels brauchen die Nodes.
+- `GameRenderer` ist eine statische Hilfsklasse und zeichnet in das `_draw()` von `main.gd`, kein eigener Node.
+- Die Tests für die Board-Logik kamen mit #20, nicht mit #17.
 
-### #17 Unit Tests 🟡
-> Sichert den Split ab. `PieceData` und `BoardCodec` sind schon heute testbar.
+## Offen
 
-| Priorität | Test |
-|---|---|
-| 1 | `BoardCodec.encode/decode` Roundtrip |
-| 2 | `PieceData.get_cells` Rotation |
-| – | Board-Clear-Logik: gehört zu #20 |
+Nicht Teil der Refactorings, die Planung steht in den Issues:
 
-### #20 game.gd Split 🔴
-> Voraussetzung für fast alles Weitere.
-
-| Schritt | Inhalt |
-|---|---|
-| 1 | `board_logic.gd` auslagern (Board-Clear, Collision, Valid) |
-| 2 | `game_renderer.gd` auslagern (Draw-Board, Draw-Piece, UI-Labels bleiben in `game.gd`) |
-| 3 | `game_input.gd` auslagern (DAS/ARR, Move/Rotate/Dispatch, Lock-Delay bleibt in `game.gd`) |
-| 4 | `game.gd` als Orchestrator auf ~300 Zeilen reduzieren |
-| 5 | Signal-Kommunikation zwischen Split-Scripts einrichten |
-
-**Ergebnis:** `game.gd` von 1.095 auf 932 Zeilen. Die ~300 waren eine grobe Schätzung, übrig sind vor allem
-Zustandsvariablen, Multiplayer mit RPCs und Game Over.
-
----
-
-## Phase 2 — Konsistenz
-
-### #15 class_name-Deklarationen 🟡
-> Direkt nach dem Split, weil neue Dateien direkt korrekt benannt werden.
-
-| Datei | Neuer Name |
-|---|---|
-| `game.gd` | `TetrisGame` |
-| `lobby.gd` | `Lobby` |
-| `summary.gd` | `GameSummary` |
-| `multiplayer_manager.gd` | `MultiplayerManager` |
-
-### #13 Docstrings konsistent 🟡
-> Profitiert von #15 (Type-Hints in Docstrings).
-
-- Alle öffentlichen Funktionen: vollständiger Docstring mit `[param]`/`[return]`
-- Signale: Beschreibung über Deklaration
-- Variablen: `##`-Kommentar für nicht-triviale Felder
-- Sprache: Deutsch
-
-### #14 show_summary() Parameter 🟡
-> Vereinfacht den Code, der durch #13 erst lesbar geworden ist.
-
-- 8 Parameter → Dictionary oder Data-Klasse
-- Alle Call-Sites in `game.gd` anpassen
-
-### #18 lobby hardcoded path 🟢
-> Einfacher Fix, aber abhängig von #15 (`class_name`).
-
-- `get_node("/root/Main/MultiplayerManager")` → relativer Pfad oder `class_name`
-
----
-
-## Phase 3 — Features
-
-### #19 Translations 🟡
-> Braucht die sauberen Strings aus #13.
-
-| Schritt | Inhalt |
-|---|---|
-| 1 | Alle UI-Strings in `tr("KEY")` umwandeln |
-| 2 | `en.csv` + `de.csv` erstellen |
-| 3 | Sprach-Auswahl in Lobby |
-
-### #16 Magic Numbers UI 🟢
-> Letzter Schritt, rein kosmetisch.
-
-- Pixel-Offsets in benannte Konstanten umbenennen
-
----
-
-Harte Abhängigkeiten stehen im Issue selbst (`Depends on`): #20 braucht #17, #15 braucht #20. Die übrige Reihenfolge
-ist **empfohlen**, nicht zwingend.
+- #19 Lokalisierung
+- #25 Tests in GitHub Actions, vorerst nicht geplant
+- #30 Eigener Spielcharakter
