@@ -61,7 +61,7 @@ func _ready() -> void:
 		return
 
 	role = _read_role(instance_index)
-	_log("Instanz %d, Rolle %s" % [instance_index, role])
+	Log.log("[PID:%d] DevAutostart: Instanz %d, Rolle %s" % [OS.get_process_id(), instance_index, role])
 	match role:
 		ROLE_SINGLE:
 			_press_button.call_deferred(_single_button)
@@ -115,11 +115,6 @@ func _read_role(index: int) -> String:
 func _press_button(button: Button) -> void:
 	button.pressed.emit()
 
-
-## Schreibt eine Meldung mit Prozess-ID ins Log.
-## [param message] — Text der Meldung.
-func _log(message: String) -> void:
-	Log.log("[PID:%d] DevAutostart: %s" % [OS.get_process_id(), message])
 #endregion
 
 
@@ -139,7 +134,9 @@ func _on_multiplayer_manager_join_failed(_reason: String) -> void:
 		return
 
 	_client_retries += 1
-	_log("Neuer Verbindungsversuch %d/%d" % [_client_retries, CLIENT_MAX_RETRIES])
+	Log.log("[PID:%d] DevAutostart: Neuer Verbindungsversuch %d/%d" % [
+		OS.get_process_id(), _client_retries, CLIENT_MAX_RETRIES,
+	])
 	# Kurze Pause, damit der Host Zeit zum Starten hat.
 	await get_tree().create_timer(CLIENT_RETRY_DELAY).timeout
 	_press_button(_join_button)
