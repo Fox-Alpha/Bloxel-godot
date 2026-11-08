@@ -1,19 +1,19 @@
 # Refactoring Roadmap
 
-Empfohlene Umsetzungsreihenfolge für die offenen Issues (#12–#19).
+Empfohlene Umsetzungsreihenfolge für die offenen Issues (#13–#20).
 
 ---
 
 ## Übersicht
 
 ```
-#12 game.gd Split
- └─► #15 class_name-Deklarationen
-      ├─► #13 Docstrings konsistent
-      ├─► #14 show_summary() Parameter
-      └─► #19 Translations
-           └─► #17 Unit Tests (nach Split)
-                ├─► #18 lobby hardcoded path
+#17 Unit Tests (BoardCodec, PieceData)
+ └─► #20 game.gd Split
+      └─► #15 class_name-Deklarationen
+           ├─► #13 Docstrings konsistent
+           ├─► #14 show_summary() Parameter
+           ├─► #18 lobby hardcoded path
+           └─► #19 Translations
                 └─► #16 Magic Numbers UI
 ```
 
@@ -21,7 +21,16 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#12–#19).
 
 ## Phase 1 — Fundament
 
-### #12 game.gd Split 🔴
+### #17 Unit Tests 🟡
+> Sichert den Split ab. `PieceData` und `BoardCodec` sind schon heute testbar.
+
+| Priorität | Test |
+|---|---|
+| 1 | `BoardCodec.encode/decode` Roundtrip |
+| 2 | `PieceData.get_cells` Rotation |
+| 3 | Board-Clear-Logik (nach #20) |
+
+### #20 game.gd Split 🔴
 > Voraussetzung für fast alles Weitere.
 
 | Schritt | Inhalt |
@@ -54,13 +63,18 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#12–#19).
 - Alle öffentlichen Funktionen: vollständiger Docstring mit `[param]`/`[return]`
 - Signale: Beschreibung über Deklaration
 - Variablen: `##`-Kommentar für nicht-triviale Felder
-- Sprache: Englisch
+- Sprache: Deutsch
 
 ### #14 show_summary() Parameter 🟡
 > Vereinfacht den Code, der durch #13 erst lesbar geworden ist.
 
 - 8 Parameter → Dictionary oder Data-Klasse
 - Alle Call-Sites in `game.gd` anpassen
+
+### #18 lobby hardcoded path 🟢
+> Einfacher Fix, aber abhängig von #15 (`class_name`).
+
+- `get_node("/root/Main/MultiplayerManager")` → relativer Pfad oder `class_name`
 
 ---
 
@@ -75,24 +89,6 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#12–#19).
 | 2 | `en.csv` + `de.csv` erstellen |
 | 3 | Sprach-Auswahl in Lobby |
 
----
-
-## Phase 4 — Qualität
-
-### #17 Unit Tests 🟢
-> Nach dem Split (#12) sind Logik-Scripts testbar.
-
-| Priorität | Test |
-|---|---|
-| 1 | `BoardCodec.encode/decode` Roundtrip |
-| 2 | `PieceData.get_cells` Rotation |
-| 3 | Board-Clear-Logik (nach #12) |
-
-### #18 lobby hardcoded path 🟢
-> Einfacher Fix, aber Abhängig von #15 (`class_name`).
-
-- `get_node("/root/Main/MultiplayerManager")` → relativer Pfad oder `class_name`
-
 ### #16 Magic Numbers UI 🟢
 > Letzter Schritt, rein kosmetisch.
 
@@ -100,14 +96,5 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#12–#19).
 
 ---
 
-## Abhängigkeiten
-
-```
-#12 ──► #15 ──► #13 ──► #14
-         │               │
-         └───────────────┘──► #19 ──► #17
-                                    ──► #18
-                                    ──► #16
-```
-
-Kein Issue ausser #12 hat harte Abhängigkeiten — die Reihenfolge ist **empfohlen**, nicht zwingend.
+Harte Abhängigkeiten stehen im Issue selbst (`Depends on`): #20 braucht #17, #15 braucht #20. Die übrige Reihenfolge
+ist **empfohlen**, nicht zwingend.
