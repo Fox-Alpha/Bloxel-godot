@@ -18,6 +18,10 @@ ios/
 /docs/issues/*
 !/docs/issues/README.md
 
+# Logs der Debug-Instanzen
+/src/logs/*
+!/src/logs/.gitkeep
+
 # Ablage für fremde Dateien und Vorlagen (nur lokal)
 /.reference/*
 !/.reference/.gitkeep
