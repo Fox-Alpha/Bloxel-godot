@@ -37,10 +37,6 @@ const CELL := 32
 const BOARD_Y := 40
 ## Y-Position der Vorschau.
 const PREVIEW_Y := 196
-## Verzögerung vor DAS-Wiederholung (Sekunden).
-const DAS_DELAY := 0.17
-## Wiederholrate während DAS (Sekunden).
-const DAS_RATE := 0.05
 ## Sync-Intervall für Multiplayer (Sekunden).
 const SYNC_INTERVAL := 0.1
 ## Anteil des Viewports für den lokalen Spielbereich (Multiplayer).
@@ -127,16 +123,15 @@ var total_pieces: int = 0
 var drop_timer: float = 0.0
 ## Intervall zwischen Drop-Schritten (abhängig von Level).
 var drop_interval: float = 0.8
-## Timer für DAS-Wiederholung (kumuliert delta).
-var das_timer: float = 0.0
-## Aktuelle DAS-Richtung: -1 = links, 0 = keine, 1 = rechts.
-var das_dir: int = 0
 ## Lock-Delay-Timer: zählt hoch, solange das Stück aufliegt.
 var lock_timer: float = 0.0
 ## Anzahl Lock-Resets in der aktuellen Aufliege-Phase.
 var lock_reset_count: int = 0
 ## Soft-Drop-Status, einmal pro Frame erfasst (konsistent im while-Loop).
 var _soft_drop_active: bool = false
+
+## Übersetzt Tasten in Spielbefehle und wiederholt gehaltene Seitwärtsbewegungen.
+var _game_input := GameInput.new()
 
 #endregion
 
@@ -215,6 +210,9 @@ func _ready() -> void:
 	summary.back_pressed.connect(_on_summary_back)
 	mp_manager.peer_disconnected.connect(_on_peer_disconnected)
 	lobby.visibility_changed.connect(_on_lobby_visibility_changed)
+	_game_input.move_requested.connect(_move)
+	_game_input.rotate_requested.connect(_rotate_cw)
+	_game_input.hard_drop_requested.connect(_hard_drop)
 	lobby.show()
 	_on_lobby_visibility_changed()
 	for c in $UI.get_children():
@@ -257,15 +255,9 @@ func _process(delta: float) -> void:
 			lock_timer = 0.0
 			lock_reset_count = 0
 	# DAS-Repeat: gehaltene Taste ist in _process sicher auswertbar.
-	if das_dir != 0:
-		var action_name := "move_left" if das_dir == -1 else "move_right"
-		if Input.is_action_pressed(action_name):
-			das_timer += delta
-			while das_timer >= DAS_DELAY + DAS_RATE:
-				das_timer -= DAS_RATE
-				_move(das_dir, 0)
-		else:
-			das_dir = 0
+	var left_pressed := Input.is_action_pressed("move_left")
+	var right_pressed := Input.is_action_pressed("move_right")
+	_game_input.update(delta, left_pressed, right_pressed)
 	if is_multiplayer:
 		sync_timer += delta
 		if sync_timer >= SYNC_INTERVAL:
@@ -284,30 +276,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if lobby.visible or summary.visible or game_over:
 		return
-	if event.is_action_pressed("hard_drop"):
-		_hard_drop()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("rotate"):
-		_rotate_cw()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_left"):
-		_move(-1, 0)
-		das_dir = -1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_right"):
-		_move(1, 0)
-		das_dir = 1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("soft_drop"):
-		_move(0, 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_left") and das_dir == -1:
-		das_dir = 0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_right") and das_dir == 1:
-		das_dir = 0
+	if _game_input.handle_event(event):
 		get_viewport().set_input_as_handled()
 
 
