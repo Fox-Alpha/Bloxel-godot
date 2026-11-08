@@ -10,7 +10,7 @@ wo sie herkommen.
 | [GDScript-formatter](#gdscript-formatter) | aktiv, nur Entwicklung |
 | [GUT](#gut) | geplant, in `plug.gd` auskommentiert |
 | [discord-rpc-godot](#discord-rpc-godot) | zurückgestellt, in `plug.gd` auskommentiert |
-| [log.gd](#loggd) | nicht eingebunden |
+| [log.gd](#loggd) | aktiv, statische Klasse `Log` für alle Ausgaben |
 
 ## gd-plug
 
