@@ -1,5 +1,7 @@
 # #16 — Hardcoded UI-Positionen durch Konstanten ersetzen
 
+GitHub: #16
+
 **Typ:** Refactoring
 **Prio:** 🟢 Niedrig
 **Status:** Offen

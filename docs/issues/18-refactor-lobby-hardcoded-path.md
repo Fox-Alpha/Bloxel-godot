@@ -1,5 +1,7 @@
 # #18 — lobby.gd: Hardcoded-Pfad entfernen
 
+GitHub: #18
+
 **Typ:** Refactoring
 **Prio:** 🟢 Niedrig
 **Status:** Offen

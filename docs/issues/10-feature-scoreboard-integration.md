@@ -8,6 +8,8 @@ assignees: ''
 
 ---
 
+GitHub: #10
+
 **Is your feature request related to a problem? Please describe.**
 Integration eines persistenten Online Scoreboard.
 

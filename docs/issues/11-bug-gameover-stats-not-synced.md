@@ -8,6 +8,8 @@ assignees: ''
 
 ---
 
+GitHub: #11
+
 **Describe the bug**
 Bei Game Over werden in der Übersicht des Clients die Werte des Host nicht angezeigt.
 Der Host hat die Werte des Client.

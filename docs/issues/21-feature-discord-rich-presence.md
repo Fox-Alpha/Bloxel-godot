@@ -1,5 +1,7 @@
 # #21 — Discord Rich Presence einbinden
 
+GitHub: #21
+
 **Typ:** Feature
 **Prio:** 🟢 Niedrig
 **Status:** Zurückgestellt

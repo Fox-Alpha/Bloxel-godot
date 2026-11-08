@@ -1,5 +1,7 @@
 # #15 — class_name-Deklarationen für alle Scripts
 
+GitHub: #15
+
 **Typ:** Refactoring  
 **Prio:** 🟡 Mittel  
 **Status:** Offen  

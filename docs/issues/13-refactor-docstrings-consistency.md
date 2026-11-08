@@ -1,5 +1,7 @@
 # #13 — Docstrings konsistent in allen .gd-Dateien aktualisieren
 
+GitHub: #13
+
 **Typ:** Refactoring  
 **Prio:** 🟡 Mittel  
 **Status:** Offen  

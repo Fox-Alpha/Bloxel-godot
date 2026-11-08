@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+GitHub: #7
+
 **Is your feature request related to a problem? Please describe.**
 Line-Clears, Locking und Level-Up haben keinerlei Animation, Partikel oder Screen-Shake. Das Spiel wirkt statisch und gibt dem Spieler kein visuelles Feedback für Erfolge.
 

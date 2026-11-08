@@ -1,5 +1,7 @@
 # #20 — game.gd aufteilen (God Object auflösen)
 
+GitHub: #20
+
 **Typ:** Refactoring  
 **Prio:** 🔴 Hoch  
 **Status:** Offen  

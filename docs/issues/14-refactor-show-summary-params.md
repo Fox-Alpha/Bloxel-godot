@@ -1,5 +1,7 @@
 # #14 — show_summary() Parameter reduzieren
 
+GitHub: #14
+
 **Typ:** Refactoring  
 **Prio:** 🟡 Mittel  
 **Status:** Offen  
