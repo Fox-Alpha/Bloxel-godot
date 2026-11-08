@@ -68,11 +68,10 @@ func show_summary(
 	if is_multiplayer:
 		winner_label.text = _determine_winner()
 		winner_label.visible = not winner_label.text.is_empty()
-		ready_button.show()
-		_show_ready_button()
 	else:
 		winner_label.hide()
-		ready_button.hide()
+	ready_button.show()
+	_show_ready_button()
 	back_button.show()
 	show()
 
@@ -149,7 +148,7 @@ func set_opponent_ready() -> void:
 
 func _show_ready_button() -> void:
 	ready_button.disabled = false
-	ready_button.text = "Ready"
+	ready_button.text = "Ready" if _is_multiplayer else "Play Again"
 	opponent_ready_label.hide()
 
 
