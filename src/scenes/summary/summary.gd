@@ -2,8 +2,7 @@ class_name GameSummary
 extends Control
 ## Post-Game-Summary mit Statistiken, Winner-Anzeige und Rematch-Flow.
 ##
-## Die Winner-Bestimmung vergleicht bei gleichzeitigem Top-Out die Scores
-## beider Spieler, sodass beide Bildschirme denselben Gewinner zeigen.
+## Daten und Gewinner-Bestimmung liegen in [SummaryContext].
 
 #region Signals
 ## Wird emittiert, wenn der Bereit- bzw. Nochmal-Button gedrückt wurde.
@@ -13,21 +12,8 @@ signal back_pressed()
 #endregion
 
 #region Private Vars
-# Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
-## Lokale End-Statistiken (score, lines, level, play_time, pieces).
-var _local_data: Dictionary = { }
-## Gegnerische End-Statistiken, leer im Einzelspieler.
-var _opponent_data: Dictionary = { }
-## Anzeigename des lokalen Spielers.
-var _local_name: String = "YOU"
-## Anzeigename des Gegners.
-var _opp_name: String = "OPPONENT"
-## Ob der lokale Spieler getoppt hat.
-var _local_lost: bool = false
-## Ob der Gegner getoppt hat.
-var _opponent_lost: bool = false
-## Ob die Summary zu einer Multiplayer-Runde gehört.
-var _is_multiplayer: bool = false
+## Gespeicherte Daten der Auswertung, auch für die Neuberechnung bei verspäteten Werten.
+var _context := SummaryContext.new()
 #endregion
 
 #region OnReady Vars
@@ -73,40 +59,18 @@ func _ready() -> void:
 
 
 #region Public Funcs
-## Zeigt die Summary mit lokalen und gegnerischen Statistiken an.
-## [param local_data] — Lokale End-Statistiken.
-## [param opponent] — Gegnerische End-Statistiken (leer im Einzelspieler).
-## [param is_multiplayer] — Ob es sich um eine Multiplayer-Runde handelt.
-## [param round_num] — Rundennummer (0 = Einzelspieler).
-## [param local_name] — Anzeigename des lokalen Spielers.
-## [param opp_name] — Anzeigename des Gegners.
-## [param local_lost] — Ob der lokale Spieler getoppt hat.
-## [param opponent_lost] — Ob der Gegner getoppt hat.
-func show_summary(
-	local_data: Dictionary,
-	opponent: Dictionary = { },
-	is_multiplayer: bool = false,
-	round_num: int = 0,
-	local_name: String = "YOU",
-	opp_name: String = "OPPONENT",
-	local_lost: bool = false,
-	opponent_lost: bool = false,
-) -> void:
-	_local_data = local_data
-	_opponent_data = opponent
-	_is_multiplayer = is_multiplayer
-	_local_name = local_name
-	_opp_name = opp_name
-	_local_lost = local_lost
-	_opponent_lost = opponent_lost
-	if round_num > 0:
-		title_label.text = "GAME OVER - Round " + str(round_num)
+## Zeigt die Auswertung an.
+## [param context] — Daten der beendeten Runde.
+func show_summary(context: SummaryContext) -> void:
+	_context = context
+	if _context.round_num > 0:
+		title_label.text = "GAME OVER - Round " + str(_context.round_num)
 	else:
 		title_label.text = "GAME OVER"
 	round_label.text = ""
 	_render_stats()
-	if is_multiplayer:
-		winner_label.text = _determine_winner()
+	if _context.is_multiplayer:
+		winner_label.text = _context.determine_winner()
 		winner_label.visible = not winner_label.text.is_empty()
 	else:
 		winner_label.hide()
@@ -121,10 +85,10 @@ func show_summary(
 ## [param opponent] — Neu erhaltene Gegner-Statistiken.
 ## [param opponent_lost] — Ob der Gegner getoppt hat.
 func update_opponent_stats(opponent: Dictionary, opponent_lost: bool) -> void:
-	_opponent_data = opponent
-	_opponent_lost = opponent_lost
+	_context.opponent_data = opponent
+	_context.opponent_lost = opponent_lost
 	_render_stats()
-	winner_label.text = _determine_winner()
+	winner_label.text = _context.determine_winner()
 	winner_label.visible = not winner_label.text.is_empty()
 
 
@@ -137,54 +101,33 @@ func set_opponent_ready() -> void:
 #region Private Funcs
 ## Rendert die Statistik-Labels aus den gespeicherten Daten.
 func _render_stats() -> void:
-	var fmt := _local_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
+	var fmt := _context.local_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
 	local_stats.text = fmt % [
-		_local_data.get("score", 0),
-		_local_data.get("lines", 0),
-		_local_data.get("level", 0),
-		_format_time(_local_data.get("play_time", 0.0)),
-		_local_data.get("pieces", 0),
+		_context.local_data.get("score", 0),
+		_context.local_data.get("lines", 0),
+		_context.local_data.get("level", 0),
+		_format_time(_context.local_data.get("play_time", 0.0)),
+		_context.local_data.get("pieces", 0),
 	]
-	if not _opponent_data.is_empty():
-		var ofmt := _opp_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
+	if not _context.opponent_data.is_empty():
+		var ofmt := _context.opp_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
 		opponent_stats.text = ofmt % [
-			_opponent_data.get("score", 0),
-			_opponent_data.get("lines", 0),
-			_opponent_data.get("level", 0),
-			_format_time(_opponent_data.get("play_time", 0.0)),
-			_opponent_data.get("pieces", 0),
+			_context.opponent_data.get("score", 0),
+			_context.opponent_data.get("lines", 0),
+			_context.opponent_data.get("level", 0),
+			_format_time(_context.opponent_data.get("play_time", 0.0)),
+			_context.opponent_data.get("pieces", 0),
 		]
 		opponent_stats.show()
 	else:
 		opponent_stats.hide()
 
 
-## Bestimmt den Gewinner aus den Top-Out-Flags und (bei Gleichstand) dem Score.
-## [b]return[/b] [String] — Gewinner-Text oder leer, wenn noch unentschieden/unbekannt.
-func _determine_winner() -> String:
-	if not _is_multiplayer or _opponent_data.is_empty():
-		return ""
-	# Beide getoppt → Score-Vergleich sorgt für konsistenten Gewinner auf beiden Seiten.
-	if _local_lost and _opponent_lost:
-		var ls := int(_local_data.get("score", 0))
-		var os := int(_opponent_data.get("score", 0))
-		if ls > os:
-			return _local_name + " WINS!"
-		if os > ls:
-			return _opp_name + " WINS!"
-		return "DRAW!"
-	if _local_lost:
-		return _opp_name + " WINS!"
-	if _opponent_lost:
-		return _local_name + " WINS!"
-	return ""
-
-
 ## Aktiviert den Bereit-Button ("Ready" im Multiplayer, sonst "Play Again").
 ## Blendet außerdem die Gegner-Bereit-Anzeige aus.
 func _show_ready_button() -> void:
 	ready_button.disabled = false
-	ready_button.text = "Ready" if _is_multiplayer else "Play Again"
+	ready_button.text = "Ready" if _context.is_multiplayer else "Play Again"
 	opponent_ready_label.hide()
 #endregion
 

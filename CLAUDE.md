@@ -21,6 +21,7 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
   | `scripts/board_logic.gd` | Regeln des Spielfelds: Kollision, Festsetzen, Reihen löschen |
   | `scripts/game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `main.gd` |
   | `scripts/game_input.gd` | Übersetzt Tasten in Signale, DAS/ARR |
+  | `scripts/summary_context.gd` | Daten der Auswertung, bestimmt den Gewinner |
   | `scripts/piece_data.gd` | Daten der Spielsteine |
   | `scripts/board_codec.gd` | Board für die Übertragung kodieren und dekodieren |
   | `scenes/lobby/lobby.gd` | Lobby, Host/Join, Spielername |

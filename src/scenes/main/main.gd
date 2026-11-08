@@ -552,37 +552,41 @@ func _build_local_stats() -> Dictionary:
 	return { score = score, lines = lines_total, level = level, play_time = play_time, pieces = total_pieces }
 
 
+## Baut die End-Statistiken des Gegners aus den per Sync bekannten Werten.
+## Zeit und Steine sind darin nicht enthalten und stehen auf 0.
+## [b]return[/b] [Dictionary] — End-Statistiken des Gegners.
+func _build_synced_opponent_stats() -> Dictionary:
+	return { score = opponent_score, lines = opponent_lines, level = opponent_level, play_time = 0.0, pieces = 0 }
+
+
+## Baut die Daten für die Auswertung. Im Einzelspiel bleibt es bei den Standardwerten.
+## [param opponent_stats] — End-Statistiken des Gegners, im Einzelspiel ohne Bedeutung.
+## [b]return[/b] [SummaryContext] — Daten für die Auswertung.
+func _build_summary_context(opponent_stats: Dictionary) -> SummaryContext:
+	var context := SummaryContext.new()
+	context.local_data = _build_local_stats()
+	if not is_multiplayer:
+		return context
+	context.opponent_data = opponent_stats
+	context.is_multiplayer = true
+	context.round_num = round_num
+	context.local_name = player_name
+	context.opp_name = opponent_name
+	context.local_lost = i_lost
+	context.opponent_lost = opponent_topped_out
+	return context
+
+
 ## Zeigt die Summary mit den bereits bekannten Gegner-Daten.
 func _show_summary_with_synced_opponent_data() -> void:
-	var local_stats := _build_local_stats()
-	if is_multiplayer:
-		var os := {
-			score = opponent_score,
-			lines = opponent_lines,
-			level = opponent_level,
-			play_time = 0.0,
-			pieces = 0,
-		}
-		summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost, opponent_topped_out)
-	else:
-		summary.show_summary(local_stats, { }, false)
+	summary.show_summary(_build_summary_context(_build_synced_opponent_stats()))
 	queue_redraw()
 
 
 ## Zeigt die Summary mit per RPC empfangenen Gegner-Daten.
 ## [param opponent_stats] — Vom Gegner erhaltene End-Statistiken.
 func _show_summary_with_received_data(opponent_stats: Dictionary) -> void:
-	var local_stats := _build_local_stats()
-	summary.show_summary(
-		local_stats,
-		opponent_stats,
-		true,
-		round_num,
-		player_name,
-		opponent_name,
-		i_lost,
-		opponent_topped_out,
-	)
+	summary.show_summary(_build_summary_context(opponent_stats))
 	queue_redraw()
 
 
@@ -595,10 +599,7 @@ func _on_opponent_topped_out() -> void:
 	opponent_topped_out = true
 	game_over = true
 	game_over_label.show()
-	var local_stats := _build_local_stats()
-	var os := { score = opponent_score, lines = opponent_lines, level = opponent_level, play_time = 0.0, pieces = 0 }
-	summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost, opponent_topped_out)
-	queue_redraw()
+	_show_summary_with_synced_opponent_data()
 
 
 ## Ermittelt die Y-Position des Ghost-Pieces (weichster Drop).
