@@ -6,30 +6,48 @@ extends Control
 ## beider Spieler, sodass beide Bildschirme denselben Gewinner zeigen.
 
 #region Signals
+## Wird emittiert, wenn der Bereit- bzw. Nochmal-Button gedrückt wurde.
 signal ready_pressed()
+## Wird emittiert, wenn der Zurück-Button gedrückt wurde.
 signal back_pressed()
 #endregion
 
 #region Private Vars
 # Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
+## Lokale End-Statistiken (score, lines, level, play_time, pieces).
 var _local_data: Dictionary = { }
+## Gegnerische End-Statistiken, leer im Einzelspieler.
 var _opponent_data: Dictionary = { }
+## Anzeigename des lokalen Spielers.
 var _local_name: String = "YOU"
+## Anzeigename des Gegners.
 var _opp_name: String = "OPPONENT"
+## Ob der lokale Spieler getoppt hat.
 var _local_lost: bool = false
+## Ob der Gegner getoppt hat.
 var _opponent_lost: bool = false
+## Ob die Summary zu einer Multiplayer-Runde gehört.
 var _is_multiplayer: bool = false
 #endregion
 
 #region OnReady Vars
+## Hintergrund-Panel der Summary.
 @onready var panel: Panel = $Panel
+## Titel ("GAME OVER", ggf. mit Rundennummer).
 @onready var title_label: Label = $Panel/Margin/VBox/TitleLabel
+## Label für die Runde, wird derzeit nur geleert.
 @onready var round_label: Label = $Panel/Margin/VBox/RoundLabel
+## Statistik-Label des lokalen Spielers.
 @onready var local_stats: Label = $Panel/Margin/VBox/HBox/LocalStats
+## Statistik-Label des Gegners.
 @onready var opponent_stats: Label = $Panel/Margin/VBox/HBox/OpponentStats
+## Button für Bereit bzw. Nochmal spielen.
 @onready var ready_button: Button = $Panel/Margin/VBox/ButtonHBox/ReadyButton
+## Anzeige, dass der Gegner bereit ist.
 @onready var opponent_ready_label: Label = $Panel/Margin/VBox/ButtonHBox/OpponentReadyLabel
+## Button zurück zur Lobby.
 @onready var back_button: Button = $Panel/Margin/VBox/ButtonHBox/BackButton
+## Label für den Gewinner.
 @onready var winner_label: Label = $Panel/Margin/VBox/WinnerLabel
 #endregion
 
@@ -37,7 +55,7 @@ var _is_multiplayer: bool = false
 #region Static Funcs
 ## Formatiert Sekunden als MM:SS.
 ## [param t] — Zeit in Sekunden.
-## [return] — Formatierter Zeit-String.
+## [b]return[/b] [String] — Formatierter Zeit-String.
 static func _format_time(t: float) -> String:
 	var minutes := int(t / 60.0)
 	var seconds := int(t) % 60
@@ -46,6 +64,7 @@ static func _format_time(t: float) -> String:
 
 
 #region Lifecycle
+## Blendet die Summary aus und verbindet die Buttons.
 func _ready() -> void:
 	hide()
 	ready_button.pressed.connect(_on_ready_button_pressed)
@@ -109,6 +128,7 @@ func update_opponent_stats(opponent: Dictionary, opponent_lost: bool) -> void:
 	winner_label.visible = not winner_label.text.is_empty()
 
 
+## Zeigt an, dass der Gegner bereit für die nächste Runde ist.
 func set_opponent_ready() -> void:
 	opponent_ready_label.show()
 #endregion
@@ -140,7 +160,7 @@ func _render_stats() -> void:
 
 
 ## Bestimmt den Gewinner aus den Top-Out-Flags und (bei Gleichstand) dem Score.
-## [return] — Gewinner-Text oder leer, wenn noch unentschieden/unbekannt.
+## [b]return[/b] [String] — Gewinner-Text oder leer, wenn noch unentschieden/unbekannt.
 func _determine_winner() -> String:
 	if not _is_multiplayer or _opponent_data.is_empty():
 		return ""
@@ -160,6 +180,8 @@ func _determine_winner() -> String:
 	return ""
 
 
+## Aktiviert den Bereit-Button ("Ready" im Multiplayer, sonst "Play Again").
+## Blendet außerdem die Gegner-Bereit-Anzeige aus.
 func _show_ready_button() -> void:
 	ready_button.disabled = false
 	ready_button.text = "Ready" if _is_multiplayer else "Play Again"
@@ -168,12 +190,14 @@ func _show_ready_button() -> void:
 
 
 #region Signal Callbacks
+## Sperrt den Button bis zur nächsten Runde und meldet [signal ready_pressed].
 func _on_ready_button_pressed() -> void:
 	ready_button.disabled = true
 	ready_button.text = "Waiting..."
 	ready_pressed.emit()
 
 
+## Blendet die Summary aus und meldet [signal back_pressed].
 func _on_back_button_pressed() -> void:
 	opponent_ready_label.hide()
 	hide()
