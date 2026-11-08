@@ -7,8 +7,16 @@ ios/
 # Disabled addons
 **/.disabled/**
 !**/.disabled/.gdignore
-addons/
-!addons/addons_used.md
+
+# Addons holt gd-plug anhand von src/plug.gd. Versioniert wird nur gd-plug selbst.
+.plugged/
+/src/addons/*
+!/src/addons/gd-plug/
+!/src/addons/.disabled/
+
+# Ablage für fremde Dateien und Vorlagen (nur lokal)
+/.reference/*
+!/.reference/.gitkeep
 
 # Export builds
 .exports/
