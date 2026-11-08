@@ -44,7 +44,7 @@ opening the project (editor closed):
 cd src && godot --headless -s plug.gd install
 ```
 
-Then open `src/project.godot` with Godot 4.7. The main scene is `res://main.tscn`. See [docs/addons.md](docs/addons.md)
+Then open `src/project.godot` with Godot 4.7. The main scene is `res://scenes/main/main.tscn`. See [docs/addons.md](docs/addons.md)
 for the addons in use.
 
 ## Tech
