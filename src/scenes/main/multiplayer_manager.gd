@@ -7,20 +7,30 @@ extends Node
 ## Race Conditions zwischen Peer-Callbacks und explizitem [method stop].
 
 #region Signals
+## Wird emittiert, wenn der Server erfolgreich erstellt wurde und auf Verbindungen wartet.
 signal host_ready()
+## Wird emittiert, wenn der Client die Verbindung zum Server aufgebaut hat.
 signal join_success()
+## Wird emittiert, wenn Server-Erstellung, Verbindungsaufbau oder die Verbindung selbst fehlschlägt.
+## [param reason] — Fehlermeldung zur Anzeige.
 signal join_failed(reason: String)
+## Wird emittiert, wenn die Verbindung zum Gegner oder zum Server getrennt wurde.
 signal peer_disconnected()
+## Wird emittiert, sobald sich ein Peer verbunden hat und das Spiel starten kann.
 signal game_start_requested()
 #endregion
 
 #region Constants
+## Standardport für Host und Join.
 const DEFAULT_PORT := 21277
 #endregion
 
 #region Public Vars
+## Aktiver ENet-Peer, [code]null[/code] solange keine Sitzung besteht.
 var enet_peer: ENetMultiplayerPeer
+## Ob diese Instanz die Sitzung hostet.
 var is_host: bool = false
+## Peer-ID des Gegners, 0 solange keiner verbunden ist.
 var opponent_id: int = 0
 #endregion
 
@@ -31,6 +41,7 @@ var _is_cleaning: bool = false
 
 
 #region Lifecycle
+## Verbindet die Signale des Multiplayer-Systems mit den Callbacks dieser Klasse.
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -42,6 +53,8 @@ func _ready() -> void:
 
 #region Public Funcs
 ## Startet einen Host-Server auf dem gegebenen Port.
+## Beendet vorher eine bestehende Sitzung und lässt genau einen Gegner zu.
+## [param port] — Port, auf dem der Server lauscht.
 func host(port: int = DEFAULT_PORT) -> void:
 	Log.log("[PID:%d] MultiplayerManager.host(port=%d)" % [OS.get_process_id(), port])
 	stop()
@@ -58,6 +71,9 @@ func host(port: int = DEFAULT_PORT) -> void:
 
 
 ## Verbindet sich als Client mit Host unter ip:port.
+## Beendet vorher eine bestehende Sitzung. Der Erfolg wird über [signal join_success] gemeldet.
+## [param ip] — Adresse des Hosts.
+## [param port] — Port des Hosts.
 func join(ip: String, port: int = DEFAULT_PORT) -> void:
 	Log.log("[PID:%d] MultiplayerManager.join(ip=%s, port=%d)" % [OS.get_process_id(), ip, port])
 	stop()
@@ -101,11 +117,16 @@ func _cleanup() -> void:
 
 
 #region Signal Callbacks
+## Merkt sich die ID des verbundenen Peers als Gegner und fordert den Spielstart an.
+## [param id] — Peer-ID des verbundenen Gegners.
 func _on_peer_connected(id: int) -> void:
 	opponent_id = id
 	game_start_requested.emit()
 
 
+## Setzt den Zustand zurück, meldet die Trennung und räumt verzögert auf.
+## Dient auch als Callback für [signal MultiplayerAPI.server_disconnected].
+## [param _id] — Peer-ID des getrennten Peers, ungenutzt.
 func _on_peer_disconnected(_id: int = 0) -> void:
 	opponent_id = 0
 	is_host = false
@@ -113,11 +134,13 @@ func _on_peer_disconnected(_id: int = 0) -> void:
 	_cleanup.call_deferred()
 
 
+## Client: Verbindung steht, der Server (Peer-ID 1) ist der Gegner.
 func _on_connected_to_server() -> void:
 	opponent_id = 1
 	join_success.emit()
 
 
+## Beendet die Sitzung und meldet den fehlgeschlagenen Verbindungsaufbau.
 func _on_connection_failed() -> void:
 	stop()
 	join_failed.emit("Connection failed: no server responding")
