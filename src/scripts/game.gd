@@ -650,6 +650,17 @@ func _send_game_over_to_opponent() -> void:
 	)
 
 
+## Sendet als Gewinner die eigenen End-Statistiken an den Verlierer.
+## Dessen Summary kennt sonst nur die Sync-Daten, in denen Zeit und Steine fehlen.
+func _send_final_stats_to_opponent() -> void:
+	if not is_multiplayer:
+		return
+	_rpc_send_final_stats.rpc_id(
+		mp_manager.opponent_id,
+		score, lines_total, level, play_time, total_pieces,
+	)
+
+
 ## Baut das lokale Statistik-Dictionary für die Summary.
 func _build_local_stats() -> Dictionary:
 	return {
@@ -960,12 +971,31 @@ func _rpc_send_game_over(
 		if is_multiplayer:
 			opponent_topped_out = true
 			summary.update_opponent_stats(os, true)
+		# Beim gleichzeitigen Top-Out haben beide Seiten ihre Werte bereits gesendet.
+		if not i_lost:
+			_send_final_stats_to_opponent()
 		return
 	i_lost = false
 	opponent_topped_out = true
 	game_over = true
 	game_over_label.show()
 	_show_summary_with_received_data(os)
+	_send_final_stats_to_opponent()
+
+
+@rpc("any_peer", "reliable")
+## [rpc("any_peer", "reliable")] Ergänzt die Summary des Verlierers um die Endwerte des Gewinners.
+func _rpc_send_final_stats(
+		opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int,
+) -> void:
+	var os := {
+		score = opp_score,
+		lines = opp_lines,
+		level = opp_level,
+		play_time = opp_time,
+		pieces = opp_pieces,
+	}
+	summary.update_opponent_stats(os, opponent_topped_out)
 
 
 @rpc("any_peer", "reliable")
