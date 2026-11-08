@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+GitHub: #8
+
 **Is your feature request related to a problem? Please describe.**
 Auf kleinen Bildschirmauflösungen (800×600) läuft der untere Teil der Lobby (`ui/lobby.tscn`) aus dem Bildschirm, weil das VBox-Layout keine Scroll-Unterstützung hat.
 

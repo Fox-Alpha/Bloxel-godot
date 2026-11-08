@@ -1,4 +1,6 @@
-# #12 — game.gd aufteilen (God Object auflösen)
+# #20 — game.gd aufteilen (God Object auflösen)
+
+GitHub: #20
 
 **Typ:** Refactoring  
 **Prio:** 🔴 Hoch  
@@ -61,6 +63,10 @@ src/scripts/
 
 ## Notes
 
-- Die Extraktion von `PieceData` und `BoardCodec` (PR #Ref) ist ein gelungener erster Schritt — dieses Issue baut darauf auf
+- Die Extraktion von `PieceData` und `BoardCodec` ist ein gelungener erster Schritt — dieses Issue baut darauf auf
 - `_draw_piece` und `_draw_board` wurden im Refactor-Branch bereits auf Lesbarkeit gebrochen (mehrzeilige Aufrufe)
 - Multiplayer-Logik könnte ggf. in einen separaten `game_multiplayer.gd` wandern (optional, Phase 2)
+
+## Abhängigkeiten
+
+Depends on #17

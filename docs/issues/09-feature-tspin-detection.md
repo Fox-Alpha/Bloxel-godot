@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+GitHub: #9
+
 **Is your feature request related to a problem? Please describe.**
 Das Spiel erkennt nur Full-Line-Clears, keine T-Spin-, Tetris- oder Back-to-Back-Boni (`scripts/game.gd:491-517`). Fortgeschrittene Spieltechniken werden nicht belohnt.
 

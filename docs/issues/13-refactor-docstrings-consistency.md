@@ -1,5 +1,7 @@
 # #13 — Docstrings konsistent in allen .gd-Dateien aktualisieren
 
+GitHub: #13
+
 **Typ:** Refactoring  
 **Prio:** 🟡 Mittel  
 **Status:** Offen  
@@ -34,7 +36,7 @@ Alle öffentlichen und wichtigen internen Funktionen haben ein **einheitliches D
 3. **Private Hilfsfunktionen** — Mindestens einzeilige Beschreibung
 4. **Signale** — `##`-Kommentar über der Signal-Deklaration mit Beschreibung
 5. **Variablen** — `##`-Kommentar für alle nicht-trivialen Variablen
-6. **Sprache:** Englisch (konsistent mit Code-Identifiern)
+6. **Sprache:** Deutsch (Regel der Projektsammlung)
 
 ## Aufgaben
 
@@ -44,7 +46,7 @@ Alle öffentlichen und wichtigen internen Funktionen haben ein **einheitliches D
 - [ ] `summary.gd` — Docstrings für alle ~10 Funktionen + 2 Signale ergänzen
 - [ ] `piece_data.gd` — Vorhandene Docstrings prüfen (sind bereits gut)
 - [ ] `board_codec.gd` — Vorhandene Docstrings prüfen (sind bereits gut)
-- [ ] Nach dem game.gd-Split (#12): Auch die neuen Dateien mit Docstrings versehen
+- [ ] Nach dem game.gd-Split (#20): Auch die neuen Dateien mit Docstrings versehen
 
 ## Akzeptanzkriterien
 

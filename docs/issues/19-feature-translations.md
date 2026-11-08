@@ -1,5 +1,7 @@
 # #19 — Localization / Übersetzungssystem einführen
 
+GitHub: #19
+
 **Typ:** Feature
 **Prio:** 🟡 Mittel
 **Status:** Offen

@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+GitHub: #6
+
 ## Zusammenfassung
 Die Board-Größe in `scripts/game.gd` weicht vom Tetris-Guideline-Standard ab: aktuell 19 sichtbare Reihen + 2 Hidden. Standard sind 20 + 2. Ein Umbau auf 20 Reihen sorgt für Guideline-Kompatibilität und erleichtert das Spiel minimal (mehr Luft zum Manövrieren).
 
