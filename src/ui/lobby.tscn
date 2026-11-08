@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dclobby01"]
 
 [ext_resource type="Script" uid="uid://d3hpk2bw7thij" path="res://scripts/lobby.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://qfv703ejhaa4" path="res://icon.svg" id="2_hgmly"]
+[ext_resource type="Texture2D" uid="uid://vird6cx5ori6" path="res://icon.svg" id="2_hgmly"]
 
 [node name="Lobby" type="Control" unique_id=480291152]
 layout_mode = 3
