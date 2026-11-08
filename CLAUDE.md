@@ -29,3 +29,13 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
   `feature/addon_discord_rpc` enthalten es noch: Beim Wechsel dorthin überschreibt Git die Dateien auf der Platte und
   entfernt sie beim Zurückwechseln. Danach die Addons neu installieren.
 - Die Discord-Einbindung ruht auf `feature/addon_discord_rpc`.
+
+## Testen mit zwei Instanzen
+
+- `src/scripts/debug/dev_autostart.gd` startet Debug-Instanzen je nach `--instance=N` und
+  `src/scripts/debug/run_roles.cfg` als `server`, `client`, `single` oder `menu`. Standard: Instanz 1 Server, Instanz 2
+  Client.
+- Einmal im Editor einstellen (*Debug > Customize Run Instances*, liegt in `.godot/`): 2 Instanzen mit
+  `--instance=N --log-file res://logs/instance_N.log`.
+- MCP steuert nur Instanz 1, deshalb die Logs direkt lesen: `src/logs/instance_1.log` und `instance_2.log`. Soll die
+  andere Seite gesteuert werden, nur `run_roles.cfg` anpassen und danach zurücksetzen.
