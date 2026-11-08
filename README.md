@@ -1,7 +1,5 @@
 # Bloxel<img width="1284" height="807" alt="Bildschirmfoto_Bloxel  PID: 8373 _06-Juli-2026_1805_01" src="https://github.com/user-attachments/assets/b0fb6a7b-75d4-49f5-8c4e-01d68b626c8b" />
 
-> weitere Screenshots im Ordner 'media'
-
 A free, open-source Tetris-like block-stacking game built with **Godot 4**, featuring classic mechanics, ghost piece, next-piece preview, speed progression, and 2-player multiplayer over LAN/internet.
 
 ## Features
@@ -39,11 +37,7 @@ A free, open-source Tetris-like block-stacking game built with **Godot 4**, feat
 
 ## Development Setup
 
-Dieses Projekt wird mit [OpenCode](https://opencode.ai) und KI-Assistenz entwickelt.
-Drei MCP-Server stellen Werkzeuge für Editor-Automation, Code-Analyse und Build bereit.
-
-Siehe [docs/GUIDE.md](docs/GUIDE.md) für Einrichtung, Konfiguration und Bedienung.
-Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_CONTEXT.md).
+Open `src/project.godot` with Godot 4.7. The main scene is `res://main.tscn`.
 
 ## Tech
 
@@ -54,22 +48,10 @@ Eine KI-optimierte Kurzbeschreibung findet sich in [docs/AI_CONTEXT.md](docs/AI_
 | Networking | ENet (built-in) |
 | UI | Responsive layout, adapts to window size |
 
-### Code Stats
-
-| Component | Lines |
-|-----------|-------|
-| Game logic (`game.gd`) | 855 |
-| Lobby / menu (`lobby.gd`) | 152 |
-| Summary screen (`summary.gd`) | 101 |
-| Multiplayer manager (`MultiplayerManager.gd`) | 89 |
-| **Total GDScript** | **1,197** |
-| Scene files (`*.tscn`) | 308 |
-| **Total project** | **~1,500 lines** |
-
 ## License
 
-MIT License – see [LICENSE](LICENSE) for details.
+MIT License
 
 ## Credits
 
-Developed by **Fox-Alpha** with AI assistance via [opencode](https://opencode.ai).
+Developed by **Fox-Alpha** with AI assistance.

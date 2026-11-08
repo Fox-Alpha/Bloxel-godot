@@ -13,12 +13,14 @@ addons/
 # Export builds
 .exports/
 
-# Import metadata
+# Import log (.import-Dateien gehören ins Repo, sie tragen die UIDs)
 .import.log.txt
-*.import
 
 # Godot LSP / Editor cache
 .godot/
+
+# Python-Linter-Cache
+.ruff_cache/
 
 # OS junk
 .DS_Store
