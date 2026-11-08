@@ -8,7 +8,6 @@ extends Node2D
 ## [BoardCodec] ausgelagert.
 
 #region Enums
-
 ## Tetromino-Typen mit den Werten 1–7 (passen zu PieceData-Keys).
 enum PieceType {
 	I = 1, ## Gerader Viererblock.
@@ -19,11 +18,9 @@ enum PieceType {
 	J = 6, ## L-förmiger Block (Spiegelung).
 	L = 7, ## L-förmiger Block.
 }
-
 #endregion
 
 #region Constants
-
 ## Spalten im Spielfeld.
 const COLS := BoardLogic.COLS
 ## Sichtbare Reihen im Spielfeld.
@@ -56,40 +53,9 @@ const LOCK_DELAY := 0.5
 const MAX_LOCK_RESETS := 15
 ## Gnadenfrist (Sekunden) für reliable RPC, bevor Sync-Fallback die Summary zeigt.
 const OPP_TOP_GRACE := 1.5
-
 #endregion
 
-#region Node references
-
-## Label für die aktuelle Punktzahl.
-@onready var score_label: Label = $UI/ScoreLabel
-## Label für die Anzahl gelöschter Linien.
-@onready var lines_label: Label = $UI/LinesLabel
-## Label für das aktuelle Level.
-@onready var level_label: Label = $UI/LevelLabel
-## Label für "Nächstes Piece".
-@onready var next_label: Label = $UI/NextLabel
-## Overlay-Label für "Game Over".
-@onready var game_over_label: Label = $UI/GameOverLabel
-## Label für die gegnerische Punktzahl (Multiplayer).
-@onready var opponent_score_label: Label = $UI/OpponentScoreLabel
-## Label für den gegnerischen Namen.
-@onready var opponent_label: Label = $UI/OpponentLabel
-## Lobby-Overlay (Start/Bereit).
-@onready var lobby: Lobby = $Overlays/Lobby
-## Summary-Overlay (Post-Game-Statistiken).
-@onready var summary: GameSummary = $Overlays/Summary
-## Referenz auf den MultiplayerManager (ENet).
-@onready var mp_manager: MultiplayerManager = $MultiplayerManager
-## Label für die vergangene Spielzeit.
-@onready var time_label: Label = $UI/TimeLabel
-## Label für die aktuelle Runde (Multiplayer).
-@onready var round_num_label: Label = $UI/RoundLabel
-
-#endregion
-
-#region Game state
-
+#region Public Vars
 ## Spielfeld als 2D-Array (TOTAL_ROWS × COLS), 0 = leer, sonst PieceType.
 var board: Array = []
 ## Aktuell fallendes Piece: {type, rot, x, y}.
@@ -107,18 +73,10 @@ var level: int = 0
 ## Ob das Spiel vorbei ist.
 var game_over: bool = false
 
-#endregion
-
-#region Stats
-
 ## Bisherige Spielzeit in Sekunden (für Statistik).
 var play_time: float = 0.0
 ## Anzahl gelandeter Pieces (für Statistik).
 var total_pieces: int = 0
-
-#endregion
-
-#region Timers
 
 ## Timer für automatischen Drop (kumuliert delta).
 var drop_timer: float = 0.0
@@ -128,15 +86,6 @@ var drop_interval: float = 0.8
 var lock_timer: float = 0.0
 ## Anzahl Lock-Resets in der aktuellen Aufliege-Phase.
 var lock_reset_count: int = 0
-## Soft-Drop-Status, einmal pro Frame erfasst (konsistent im while-Loop).
-var _soft_drop_active: bool = false
-
-## Übersetzt Tasten in Spielbefehle und wiederholt gehaltene Seitwärtsbewegungen.
-var _game_input := GameInput.new()
-
-#endregion
-
-#region Layout
 
 ## X-Position des Spielfeld-Origins.
 var board_x: int = 0
@@ -144,10 +93,6 @@ var board_x: int = 0
 var preview_x: int = 0
 ## X-Position der UI-Labels.
 var ui_x: int = 0
-
-#endregion
-
-#region Multiplayer state
 
 ## Ob eine Multiplayer-Sitzung aktiv ist.
 var is_multiplayer: bool = false
@@ -191,12 +136,44 @@ var i_lost: bool = false
 var opponent_topped_out: bool = false
 ## Gnadenfrist-Timer für reliable RPC, bevor Sync-Fallback greift.
 var opp_top_grace: float = 0.0
+#endregion
 
+#region Private Vars
+## Soft-Drop-Status, einmal pro Frame erfasst (konsistent im while-Loop).
+var _soft_drop_active: bool = false
+## Übersetzt Tasten in Spielbefehle und wiederholt gehaltene Seitwärtsbewegungen.
+var _game_input := GameInput.new()
+#endregion
+
+#region OnReady Vars
+## Label für die aktuelle Punktzahl.
+@onready var score_label: Label = $UI/ScoreLabel
+## Label für die Anzahl gelöschter Linien.
+@onready var lines_label: Label = $UI/LinesLabel
+## Label für das aktuelle Level.
+@onready var level_label: Label = $UI/LevelLabel
+## Label für "Nächstes Piece".
+@onready var next_label: Label = $UI/NextLabel
+## Overlay-Label für "Game Over".
+@onready var game_over_label: Label = $UI/GameOverLabel
+## Label für die gegnerische Punktzahl (Multiplayer).
+@onready var opponent_score_label: Label = $UI/OpponentScoreLabel
+## Label für den gegnerischen Namen.
+@onready var opponent_label: Label = $UI/OpponentLabel
+## Lobby-Overlay (Start/Bereit).
+@onready var lobby: Lobby = $Overlays/Lobby
+## Summary-Overlay (Post-Game-Statistiken).
+@onready var summary: GameSummary = $Overlays/Summary
+## Referenz auf den MultiplayerManager (ENet).
+@onready var mp_manager: MultiplayerManager = $MultiplayerManager
+## Label für die vergangene Spielzeit.
+@onready var time_label: Label = $UI/TimeLabel
+## Label für die aktuelle Runde (Multiplayer).
+@onready var round_num_label: Label = $UI/RoundLabel
 #endregion
 
 
 #region Lifecycle
-
 ## Initialisiert Layout und verbindet UI-Signale.
 func _ready() -> void:
 	_init_layout()
@@ -298,12 +275,10 @@ func _draw() -> void:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0, 0, 0, 0.55))
 	_draw_ui_labels()
-
 #endregion
 
 
-#region Initialization
-
+#region Private Funcs
 ## Berechnet Board- und UI-Positionen basierend auf Viewport-Grösse.
 func _init_layout() -> void:
 	var vp := get_viewport().get_visible_rect().size
@@ -332,10 +307,6 @@ func _set_ui_font_sizes() -> void:
 	opponent_label.add_theme_font_size_override("font_size", fs)
 	time_label.add_theme_font_size_override("font_size", fs)
 
-#endregion
-
-
-#region Game start
 
 ## Startet ein Einzelspieler-Spiel.
 func _start_single_player() -> void:
@@ -396,10 +367,6 @@ func _new_game() -> void:
 	time_label.show()
 	queue_redraw()
 
-#endregion
-
-
-#region Piece generation
 
 ## Zieht den nächsten Piece-Typ aus dem 7-Bag.
 ## Füllt den Bag mit einer neuen Shuffle-Runde, wenn er zur Neige geht.
@@ -419,10 +386,6 @@ func _pop_bag() -> int:
 func _get_cells(typ: int, rot: int) -> Array:
 	return PieceData.get_cells(typ, rot)
 
-#endregion
-
-
-#region Spawn / movement / rotation
 
 ## Spawnt das nächste Piece und prüft auf Game Over (Block-Out).
 func _spawn() -> void:
@@ -503,10 +466,6 @@ func _rotate_cw() -> void:
 			queue_redraw()
 			return
 
-#endregion
-
-
-#region Drop / lock / clear
 
 ## Lässt das Piece sofort auf die unterste gültige Position fallen.
 ## Bonus-Punkte: 2 pro zurückgelegter Reihe.
@@ -558,10 +517,6 @@ func _clear_lines() -> void:
 			level = new_level
 			drop_interval = max(0.05, 0.8 - level * 0.05)
 
-#endregion
-
-
-#region Game over
 
 ## Zeigt Game-Over-Label, benachrichtigt Gegner (MP) und zeigt Summary (SP).
 func _trigger_game_over() -> void:
@@ -641,10 +596,6 @@ func _on_opponent_topped_out() -> void:
 	summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost, opponent_topped_out)
 	queue_redraw()
 
-#endregion
-
-
-#region Ghost
 
 ## Ermittelt die Y-Position des Ghost-Pieces (weichster Drop).
 ## [return] — Y-Position des Aufsetzpunkts.
@@ -652,10 +603,6 @@ func _ghost_y() -> int:
 	var cels: Array = _get_cells(current.type, current.rot)
 	return BoardLogic.drop_y(board, cels, current.x, current.y)
 
-#endregion
-
-
-#region UI
 
 ## Aktualisiert das Label mit dem gegnerischen Namen und Host-Status.
 func _update_opponent_label() -> void:
@@ -699,10 +646,6 @@ func _draw_ui_labels() -> void:
 		opponent_score_label.position = Vector2(opp_board_x, opp_board_y + ROWS * opp_cell + 8)
 		opponent_label.position = Vector2(opp_board_x, opp_board_y - 24)
 
-#endregion
-
-
-#region Drawing
 
 ## Zeichnet Ghost Piece und aktives Stück auf das eigene Spielfeld.
 ## [param origin] — Pixelposition des Spielfelds.
@@ -714,10 +657,6 @@ func _draw_active_piece(origin: Vector2i) -> void:
 	GameRenderer.draw_piece(self, current.type, current.rot, ghost_pos, GameRenderer.GHOST_ALPHA, origin, CELL)
 	GameRenderer.draw_piece(self, current.type, current.rot, piece_pos, 1.0, origin, CELL)
 
-#endregion
-
-
-#region Multiplayer sync
 
 ## Sendet Board-Zustand und Score per RPC an den Gegner (periodisch).
 func _send_sync() -> void:
@@ -731,6 +670,22 @@ func _send_sync() -> void:
 	_rpc_sync_state.rpc_id(mp_manager.opponent_id, data, score, lines_total, level, game_over)
 
 
+## Setzt den Multiplayer-Zustand für eine neue Runde zurück.
+func _reset_multiplayer_state() -> void:
+	host_ready = false
+	opponent_ready = false
+	opponent_board = []
+	opponent_score = 0
+	opponent_lines = 0
+	opponent_level = 0
+	opponent_game_over = false
+	opponent_topped_out = false
+	opp_top_grace = 0.0
+	summary.hide()
+#endregion
+
+
+#region Signal Callbacks
 ## Setzt das Spiel zurück und zeigt die Lobby bei Verbindungsabbruch.
 func _on_peer_disconnected() -> void:
 	opponent_board = []
@@ -752,11 +707,47 @@ func _on_peer_disconnected() -> void:
 	lobby.set_status("Opponent disconnected")
 	queue_redraw()
 
+
+## Blendet die Spielanzeige aus, solange die Lobby offen ist.
+func _on_lobby_visibility_changed() -> void:
+	$UI.visible = not lobby.visible
+
+
+## Reagiert auf "Bereit"-Button in der Summary — startet nächste Runde.
+func _on_summary_ready() -> void:
+	if is_multiplayer:
+		host_ready = true
+		_rpc_opponent_ready.rpc_id(mp_manager.opponent_id)
+		if is_host and host_ready and opponent_ready:
+			_rpc_restart.rpc(round_num + 1)
+	else:
+		_start_single_player()
+
+
+## Reagiert auf "Zurück"-Button — beendet Multiplayer-Session und zeigt Lobby.
+func _on_summary_back() -> void:
+	if is_multiplayer:
+		mp_manager.stop()
+	game_over = false
+	opponent_board = []
+	opponent_score = 0
+	opponent_game_over = false
+	opponent_topped_out = false
+	round_num = 0
+	i_lost = false
+	opponent_name = "Opponent"
+	game_over_label.hide()
+	time_label.hide()
+	round_num_label.hide()
+	opponent_score_label.hide()
+	opponent_label.hide()
+	lobby.reset()
+	lobby.show()
+	queue_redraw()
 #endregion
 
 
-#region RPCs
-
+#region RPC
 @rpc("any_peer", "unreliable", "call_local")
 ## [rpc("any_peer", "unreliable", "call_local")] Synchronisiert Board und Score vom Gegner.
 func _rpc_sync_state(
@@ -844,61 +835,4 @@ func _rpc_start_game(host_name: String) -> void:
 func _rpc_send_my_name(n: String) -> void:
 	opponent_name = n
 	_update_opponent_label()
-
-
-## Setzt den Multiplayer-Zustand für eine neue Runde zurück.
-func _reset_multiplayer_state() -> void:
-	host_ready = false
-	opponent_ready = false
-	opponent_board = []
-	opponent_score = 0
-	opponent_lines = 0
-	opponent_level = 0
-	opponent_game_over = false
-	opponent_topped_out = false
-	opp_top_grace = 0.0
-	summary.hide()
-
-#endregion
-
-
-#region Summary callbacks
-
-## Blendet die Spielanzeige aus, solange die Lobby offen ist.
-func _on_lobby_visibility_changed() -> void:
-	$UI.visible = not lobby.visible
-
-
-## Reagiert auf "Bereit"-Button in der Summary — startet nächste Runde.
-func _on_summary_ready() -> void:
-	if is_multiplayer:
-		host_ready = true
-		_rpc_opponent_ready.rpc_id(mp_manager.opponent_id)
-		if is_host and host_ready and opponent_ready:
-			_rpc_restart.rpc(round_num + 1)
-	else:
-		_start_single_player()
-
-
-## Reagiert auf "Zurück"-Button — beendet Multiplayer-Session und zeigt Lobby.
-func _on_summary_back() -> void:
-	if is_multiplayer:
-		mp_manager.stop()
-	game_over = false
-	opponent_board = []
-	opponent_score = 0
-	opponent_game_over = false
-	opponent_topped_out = false
-	round_num = 0
-	i_lost = false
-	opponent_name = "Opponent"
-	game_over_label.hide()
-	time_label.hide()
-	round_num_label.hide()
-	opponent_score_label.hide()
-	opponent_label.hide()
-	lobby.reset()
-	lobby.show()
-	queue_redraw()
-
 #endregion
