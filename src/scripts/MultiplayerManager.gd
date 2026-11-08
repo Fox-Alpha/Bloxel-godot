@@ -30,33 +30,33 @@ func _ready() -> void:
 
 ## Startet einen Host-Server auf dem gegebenen Port.
 func host(port: int = DEFAULT_PORT) -> void:
-	print("[PID:", OS.get_process_id(), "] MultiplayerManager.host(port=", port, ")")
+	Log.log("[PID:%d] MultiplayerManager.host(port=%d)" % [OS.get_process_id(), port])
 	stop()
 	enet_peer = ENetMultiplayerPeer.new()
 	var err := enet_peer.create_server(port, 1)
 	if err != OK:
-		print("[PID:", OS.get_process_id(), "] host failed: ", err)
+		Log.error("[PID:%d] host failed: %s" % [OS.get_process_id(), error_string(err)])
 		join_failed.emit("Failed to create server (error " + str(err) + ")")
 		return
 	multiplayer.multiplayer_peer = enet_peer
 	is_host = true
 	host_ready.emit()
-	print("[PID:", OS.get_process_id(), "] host ready, listening on ", port)
+	Log.log("[PID:%d] host ready, listening on %d" % [OS.get_process_id(), port])
 
 
 ## Verbindet sich als Client mit Host unter ip:port.
 func join(ip: String, port: int = DEFAULT_PORT) -> void:
-	print("[PID:", OS.get_process_id(), "] MultiplayerManager.join(ip=", ip, ", port=", port, ")")
+	Log.log("[PID:%d] MultiplayerManager.join(ip=%s, port=%d)" % [OS.get_process_id(), ip, port])
 	stop()
 	enet_peer = ENetMultiplayerPeer.new()
 	var err := enet_peer.create_client(ip, port)
 	if err != OK:
-		print("[PID:", OS.get_process_id(), "] join failed: ", err)
+		Log.error("[PID:%d] join failed: %s" % [OS.get_process_id(), error_string(err)])
 		join_failed.emit("Failed to connect (error " + str(err) + ")")
 		return
 	multiplayer.multiplayer_peer = enet_peer
 	is_host = false
-	print("[PID:", OS.get_process_id(), "] join initiated, waiting for connection...")
+	Log.log("[PID:%d] join initiated, waiting for connection..." % OS.get_process_id())
 
 
 ## Schliesst den Peer und löst die Multiplayer-Verbindung.

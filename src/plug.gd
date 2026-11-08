@@ -9,6 +9,13 @@ extends "res://addons/gd-plug/plug.gd"
 
 ## Deklariert die Addons. Standardmäßig wird nur der Ordner [code]addons/[/code] eines Repos installiert.
 func _plugging() -> void:
+	# Logging
+	plug("Fox-Alpha/log.gd-fork", {
+		"branch": "develope",
+		"include": ["addons/log/"],
+		"install_root": "addons/log/",
+	})
+
 	# Werkzeuge
 	# Nur die Editor-Variante: Der Variante "standalone" fehlt im Repo die kompilierte Bibliothek.
 	plug("GDQuest/GDScript-formatter", {

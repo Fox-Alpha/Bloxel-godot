@@ -61,7 +61,7 @@ func _ready() -> void:
 		return
 
 	role = _read_role(instance_index)
-	_log("Instanz %d, Rolle %s" % [instance_index, role])
+	Log.log("[PID:%d] DevAutostart: Instanz %d, Rolle %s" % [OS.get_process_id(), instance_index, role])
 	match role:
 		ROLE_SINGLE:
 			_press_button.call_deferred(_single_button)
@@ -100,12 +100,12 @@ func _read_role(index: int) -> String:
 	var config := ConfigFile.new()
 	var error: Error = config.load(ROLES_FILE)
 	if error != OK:
-		push_warning("DevAutostart: %s nicht lesbar (%s)" % [ROLES_FILE, error_string(error)])
+		Log.warn("DevAutostart: %s nicht lesbar (%s)" % [ROLES_FILE, error_string(error)])
 		return ROLE_MENU
 
 	var value: String = str(config.get_value(ROLES_SECTION, "instance_%d" % index, ROLE_MENU)).to_lower()
 	if value not in [ROLE_MENU, ROLE_SERVER, ROLE_CLIENT, ROLE_SINGLE]:
-		push_warning("DevAutostart: unbekannte Rolle %s für Instanz %d" % [value, index])
+		Log.warn("DevAutostart: unbekannte Rolle %s für Instanz %d" % [value, index])
 		return ROLE_MENU
 	return value
 
@@ -115,11 +115,6 @@ func _read_role(index: int) -> String:
 func _press_button(button: Button) -> void:
 	button.pressed.emit()
 
-
-## Schreibt eine Meldung mit Prozess-ID ins Log.
-## [param message] — Text der Meldung.
-func _log(message: String) -> void:
-	print("[PID:", OS.get_process_id(), "] DevAutostart: ", message)
 #endregion
 
 
@@ -135,11 +130,13 @@ func _on_multiplayer_manager_join_failed(_reason: String) -> void:
 	if _client_connected:
 		return
 	if _client_retries >= CLIENT_MAX_RETRIES:
-		push_warning("DevAutostart: keine Verbindung nach %d Versuchen" % _client_retries)
+		Log.warn("DevAutostart: keine Verbindung nach %d Versuchen" % _client_retries)
 		return
 
 	_client_retries += 1
-	_log("Neuer Verbindungsversuch %d/%d" % [_client_retries, CLIENT_MAX_RETRIES])
+	Log.log("[PID:%d] DevAutostart: Neuer Verbindungsversuch %d/%d" % [
+		OS.get_process_id(), _client_retries, CLIENT_MAX_RETRIES,
+	])
 	# Kurze Pause, damit der Host Zeit zum Starten hat.
 	await get_tree().create_timer(CLIENT_RETRY_DELAY).timeout
 	_press_button(_join_button)
