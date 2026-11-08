@@ -12,6 +12,11 @@ signal single_player_requested()
 signal game_started()
 #endregion
 
+#region Exports
+## Verbindung zum Netzwerk, wird in der Hauptszene zugewiesen.
+@export var mp_manager: MultiplayerManager
+#endregion
+
 #region Public Vars
 ## Spielername ohne Rollenzusatz, wird beim Host/Join aus dem Namensfeld übernommen.
 var player_name: String = ""
@@ -45,8 +50,6 @@ var _window_role: String = ""
 @onready var status_label: Label = $VBox/StatusLabel
 ## Button zum Beenden des Spiels.
 @onready var quit_button: Button = $VBox/QuitButton
-## Referenz auf den MultiplayerManager der Hauptszene.
-@onready var mp_manager: MultiplayerManager = get_node("/root/Main/MultiplayerManager")
 #endregion
 
 
