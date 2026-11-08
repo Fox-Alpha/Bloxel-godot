@@ -1,4 +1,8 @@
 extends Control
+## Post-Game-Summary mit Statistiken, Winner-Anzeige und Rematch-Flow.
+##
+## Die Winner-Bestimmung vergleicht bei gleichzeitigem Top-Out die Scores
+## beider Spieler, sodass beide Bildschirme denselben Gewinner zeigen.
 
 signal ready_pressed()
 signal back_pressed()
@@ -13,6 +17,15 @@ signal back_pressed()
 @onready var back_button: Button = $Panel/Margin/VBox/ButtonHBox/BackButton
 @onready var winner_label: Label = $Panel/Margin/VBox/WinnerLabel
 
+# Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
+var _local_data: Dictionary = {}
+var _opponent_data: Dictionary = {}
+var _local_name: String = "YOU"
+var _opp_name: String = "OPPONENT"
+var _local_lost: bool = false
+var _opponent_lost: bool = false
+var _is_multiplayer: bool = false
+
 
 func _ready() -> void:
 	hide()
@@ -20,18 +33,41 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_button_pressed)
 
 
-func show_summary(local_data: Dictionary, opponent: Dictionary = {}, is_multiplayer: bool = false, round_num: int = 0, local_name: String = "YOU", opp_name: String = "OPPONENT", local_lost: bool = false) -> void:
+## Zeigt die Summary mit lokalen und gegnerischen Statistiken an.
+## [param local_data] — Lokale End-Statistiken.
+## [param opponent] — Gegnerische End-Statistiken (leer im Einzelspieler).
+## [param is_multiplayer] — Ob es sich um eine Multiplayer-Runde handelt.
+## [param round_num] — Rundennummer (0 = Einzelspieler).
+## [param local_name] — Anzeigename des lokalen Spielers.
+## [param opp_name] — Anzeigename des Gegners.
+## [param local_lost] — Ob der lokale Spieler getoppt hat.
+## [param opponent_lost] — Ob der Gegner getoppt hat.
+func show_summary(
+		local_data: Dictionary,
+		opponent: Dictionary = {},
+		is_multiplayer: bool = false,
+		round_num: int = 0,
+		local_name: String = "YOU",
+		opp_name: String = "OPPONENT",
+		local_lost: bool = false,
+		opponent_lost: bool = false,
+) -> void:
+	_local_data = local_data
+	_opponent_data = opponent
+	_is_multiplayer = is_multiplayer
+	_local_name = local_name
+	_opp_name = opp_name
+	_local_lost = local_lost
+	_opponent_lost = opponent_lost
 	if round_num > 0:
 		title_label.text = "GAME OVER - Round " + str(round_num)
-		round_label.text = ""
 	else:
 		title_label.text = "GAME OVER"
-		round_label.text = ""
-	_update_stats(local_data, opponent, local_name, opp_name)
+	round_label.text = ""
+	_render_stats()
 	if is_multiplayer:
-		var w: String = _determine_winner(local_data, opponent, local_lost, local_name, opp_name)
-		winner_label.text = w
-		winner_label.show()
+		winner_label.text = _determine_winner()
+		winner_label.visible = not winner_label.text.is_empty()
 		ready_button.show()
 		_show_ready_button()
 	else:
@@ -41,38 +77,66 @@ func show_summary(local_data: Dictionary, opponent: Dictionary = {}, is_multipla
 	show()
 
 
-func _update_stats(d: Dictionary, opponent: Dictionary, local_name: String = "YOU", opp_name: String = "OPPONENT") -> void:
-	var fmt := local_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
+## Aktualisiert die gegnerischen Statistiken nachträglich (z. B. wenn der
+## reliable Game-Over-RPC verspätet eintrifft) und bestimmt den Winner neu.
+## [param opponent] — Neu erhaltene Gegner-Statistiken.
+## [param opponent_lost] — Ob der Gegner getoppt hat.
+func update_opponent_stats(opponent: Dictionary, opponent_lost: bool) -> void:
+	_opponent_data = opponent
+	_opponent_lost = opponent_lost
+	_render_stats()
+	winner_label.text = _determine_winner()
+	winner_label.visible = not winner_label.text.is_empty()
+
+
+## Rendert die Statistik-Labels aus den gespeicherten Daten.
+func _render_stats() -> void:
+	var fmt := _local_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
 	local_stats.text = fmt % [
-		d.get("score", 0),
-		d.get("lines", 0),
-		d.get("level", 0),
-		_format_time(d.get("play_time", 0.0)),
-		d.get("pieces", 0),
+		_local_data.get("score", 0),
+		_local_data.get("lines", 0),
+		_local_data.get("level", 0),
+		_format_time(_local_data.get("play_time", 0.0)),
+		_local_data.get("pieces", 0),
 	]
-	if not opponent.is_empty():
-		var ofmt := opp_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
+	if not _opponent_data.is_empty():
+		var ofmt := _opp_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
 		opponent_stats.text = ofmt % [
-			opponent.get("score", 0),
-			opponent.get("lines", 0),
-			opponent.get("level", 0),
-			_format_time(opponent.get("play_time", 0.0)),
-			opponent.get("pieces", 0),
+			_opponent_data.get("score", 0),
+			_opponent_data.get("lines", 0),
+			_opponent_data.get("level", 0),
+			_format_time(_opponent_data.get("play_time", 0.0)),
+			_opponent_data.get("pieces", 0),
 		]
 		opponent_stats.show()
 	else:
 		opponent_stats.hide()
 
 
-func _determine_winner(_local: Dictionary, opponent: Dictionary, local_lost: bool = false, local_name: String = "YOU", opp_name: String = "OPPONENT") -> String:
-	if opponent.is_empty():
+## Bestimmt den Gewinner aus den Top-Out-Flags und (bei Gleichstand) dem Score.
+## [return] — Gewinner-Text oder leer, wenn noch unentschieden/unbekannt.
+func _determine_winner() -> String:
+	if not _is_multiplayer or _opponent_data.is_empty():
 		return ""
-	if local_lost:
-		return opp_name + " WINS!"
-	else:
-		return local_name + " WINS!"
+	# Beide getoppt → Score-Vergleich sorgt für konsistenten Gewinner auf beiden Seiten.
+	if _local_lost and _opponent_lost:
+		var ls := int(_local_data.get("score", 0))
+		var os := int(_opponent_data.get("score", 0))
+		if ls > os:
+			return _local_name + " WINS!"
+		if os > ls:
+			return _opp_name + " WINS!"
+		return "DRAW!"
+	if _local_lost:
+		return _opp_name + " WINS!"
+	if _opponent_lost:
+		return _local_name + " WINS!"
+	return ""
 
 
+## Formatiert Sekunden als MM:SS.
+## [param t] — Zeit in Sekunden.
+## [return] — Formatierter Zeit-String.
 static func _format_time(t: float) -> String:
 	var minutes := int(t / 60.0)
 	var seconds := int(t) % 60
