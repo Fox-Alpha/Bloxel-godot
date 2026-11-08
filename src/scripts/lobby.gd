@@ -38,7 +38,7 @@ func _set_pid_title() -> void:
 
 func _ready() -> void:
 	var pid := OS.get_process_id()
-	print("[PID:", pid, "] lobby _ready")
+	Log.log("[PID:%d] lobby _ready" % pid)
 	_set_pid_title()
 	get_tree().create_timer(0.3).timeout.connect(_set_pid_title)
 	port_edit.text = str(mp_manager.DEFAULT_PORT)
@@ -79,7 +79,7 @@ func _on_single_button_pressed() -> void:
 func _on_host_button_pressed() -> void:
 	if _connecting:
 		return
-	print("[PID:", OS.get_process_id(), "] Host button clicked")
+	Log.log("[PID:%d] Host button clicked" % OS.get_process_id())
 	_connecting = true
 	_set_form_enabled(false)
 	var port := int(port_edit.text)
@@ -96,7 +96,7 @@ func _on_host_button_pressed() -> void:
 func _on_join_button_pressed() -> void:
 	if _connecting:
 		return
-	print("[PID:", OS.get_process_id(), "] Join button clicked")
+	Log.log("[PID:%d] Join button clicked" % OS.get_process_id())
 	_connecting = true
 	_set_form_enabled(false)
 	var ip := ip_edit.text.strip_edges()

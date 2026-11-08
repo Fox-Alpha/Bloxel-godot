@@ -100,12 +100,12 @@ func _read_role(index: int) -> String:
 	var config := ConfigFile.new()
 	var error: Error = config.load(ROLES_FILE)
 	if error != OK:
-		push_warning("DevAutostart: %s nicht lesbar (%s)" % [ROLES_FILE, error_string(error)])
+		Log.warn("DevAutostart: %s nicht lesbar (%s)" % [ROLES_FILE, error_string(error)])
 		return ROLE_MENU
 
 	var value: String = str(config.get_value(ROLES_SECTION, "instance_%d" % index, ROLE_MENU)).to_lower()
 	if value not in [ROLE_MENU, ROLE_SERVER, ROLE_CLIENT, ROLE_SINGLE]:
-		push_warning("DevAutostart: unbekannte Rolle %s für Instanz %d" % [value, index])
+		Log.warn("DevAutostart: unbekannte Rolle %s für Instanz %d" % [value, index])
 		return ROLE_MENU
 	return value
 
@@ -119,7 +119,7 @@ func _press_button(button: Button) -> void:
 ## Schreibt eine Meldung mit Prozess-ID ins Log.
 ## [param message] — Text der Meldung.
 func _log(message: String) -> void:
-	print("[PID:", OS.get_process_id(), "] DevAutostart: ", message)
+	Log.log("[PID:%d] DevAutostart: %s" % [OS.get_process_id(), message])
 #endregion
 
 
@@ -135,7 +135,7 @@ func _on_multiplayer_manager_join_failed(_reason: String) -> void:
 	if _client_connected:
 		return
 	if _client_retries >= CLIENT_MAX_RETRIES:
-		push_warning("DevAutostart: keine Verbindung nach %d Versuchen" % _client_retries)
+		Log.warn("DevAutostart: keine Verbindung nach %d Versuchen" % _client_retries)
 		return
 
 	_client_retries += 1
