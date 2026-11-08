@@ -51,3 +51,7 @@ Jedes Script bekommt ein `class_name` gemäss GDScript-Style-Guide (PascalCase).
 - Alle 6 Scripts haben ein `class_name`
 - Typannotationen in `@onready`-Variablen nutzen die neuen Klassennamen
 - Kein Lint-Fehler
+
+## Abhängigkeiten
+
+Depends on #20

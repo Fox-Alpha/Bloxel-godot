@@ -1,7 +1,7 @@
-# #17 — Unit Tests für Kernlogik einführen
+# #17 — Unit-Tests für die Kernlogik mit GUT
 
 **Typ:** Feature
-**Prio:** 🟢 Niedrig
+**Prio:** 🟡 Mittel
 **Status:** Offen
 **Betrifft:** `src/scripts/piece_data.gd`, `src/scripts/board_codec.gd`, zukünftige Logik-Scripts
 
@@ -16,7 +16,7 @@ Es gibt **keine Tests** im Projekt. Die kürzlich extrahierten Klassen `PieceDat
 
 ## Ziel
 
-Grundlegende Testabdeckung für die Kernlogik mit Godots eingebautem Test-Runner (`--headless --script`).
+Grundlegende Testabdeckung für die Kernlogik mit [GUT](https://github.com/bitwes/Gut). GUT ist in `src/plug.gd` bereits auskommentiert vorgemerkt und läuft im Editor und headless.
 
 ## Priorität für Tests
 
@@ -25,17 +25,18 @@ Grundlegende Testabdeckung für die Kernlogik mit Godots eingebautem Test-Runner
 | `BoardCodec.encode/decode` | Exzellent (statisch, deterministisch) | 🔴 Hoch |
 | `PieceData.get_cells` | Exzellent (statisch, deterministisch) | 🔴 Hoch |
 | `PieceData.get_kicks` | Exzellent | 🟡 Mittel |
-| Board-Clear-Logik (nach Split) | Gut (nach #12) | 🟡 Mittel |
-| Collision-Detection (nach Split) | Gut (nach #12) | 🟡 Mittel |
+| Board-Clear-Logik (nach Split) | Gut (nach #20) | 🟡 Mittel |
+| Collision-Detection (nach Split) | Gut (nach #20) | 🟡 Mittel |
 
 ## Aufgaben
 
-- [ ] Test-Infrastruktur einrichten (Godot `--headless` oder GdUnit4)
+- [ ] GUT in `src/plug.gd` aktivieren und installieren, Testordner `src/tests/` anlegen
 - [ ] `test_board_codec.gd`: Encode/Decode-Roundtrip, Edge Cases (leeres Board, maximale Werte)
 - [ ] `test_piece_data.gd`: Rotation aller 7 Piece-Types, Wall-Kick-Offsets
-- [ ] Nach game.gd-Split (#12): Tests für Board-Logik (Clear, Collision, Valid)
+- [ ] Nach game.gd-Split (#20): Tests für Board-Logik (Clear, Collision, Valid)
 - [ ] CI-Integration (GitHub Actions mit `--headless`)
 
 ## Abhängigkeiten
 
-- #12 (game.gd-Split) sollte zuerst abgeschlossen werden, damit Logik-Tests sinnvoll sind
+- Die Tests für `BoardCodec` und `PieceData` entstehen vor #20 und sichern den Split ab
+- Tests für die Board-Logik folgen nach #20
