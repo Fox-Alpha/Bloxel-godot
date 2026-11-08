@@ -24,3 +24,27 @@ Guard-Variable (`_cleaning_up`) einführen oder `stop()` vor dem deferred-Aufruf
 
 **Additional context**
 Code-Review 2026-07-06, Punkt #5
+
+---
+
+## Status: BEHOBEN ✅
+
+**Behoben in:** `feature/refactor-bugs-and-structure` (Commit `b66e96d`)
+**Datum:** 2026-07-10
+
+**Lösung:**
+Guard-Variable `_is_cleaning` in `_cleanup()` eingeführt, die einen doppelten Aufruf verhindert:
+
+```gdscript
+func _cleanup() -> void:
+    if _is_cleaning:
+        return
+    _is_cleaning = true
+    if enet_peer != null:
+        enet_peer.close()
+        enet_peer = null
+    multiplayer.multiplayer_peer = null
+    _is_cleaning = false
+```
+
+Zusätzlich wurde die Reihenfolge in `stop()` mit `_cleanup()` vereinheitlicht (erst `close()`, dann `null`) — siehe auch `bug-mpmanager-race-condition_done.md`.
