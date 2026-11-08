@@ -12,6 +12,7 @@ signal game_started()
 @onready var join_port_edit: LineEdit = $VBox/JoinPortHBox/JoinPortEdit
 @onready var join_button: Button = $VBox/JoinButton
 @onready var status_label: Label = $VBox/StatusLabel
+@onready var quit_button: Button = $VBox/QuitButton
 @onready var mp_manager = get_node("/root/Main/MultiplayerManager")
 
 var _connecting: bool = false
@@ -57,6 +58,7 @@ func _ready() -> void:
 	single_button.pressed.connect(_on_single_button_pressed)
 	host_button.pressed.connect(_on_host_button_pressed)
 	join_button.pressed.connect(_on_join_button_pressed)
+	quit_button.pressed.connect(_on_quit_button_pressed)
 	mp_manager.host_ready.connect(_on_host_ready)
 	mp_manager.join_success.connect(_on_join_success)
 	mp_manager.join_failed.connect(_on_join_failed)
@@ -83,6 +85,12 @@ func _set_form_enabled(enabled: bool) -> void:
 func _on_single_button_pressed() -> void:
 	single_player_requested.emit()
 	hide()
+
+
+## Beendet das Spiel. Eine wartende Verbindung wird vorher getrennt.
+func _on_quit_button_pressed() -> void:
+	mp_manager.stop()
+	get_tree().quit()
 
 
 func _on_host_button_pressed() -> void:
