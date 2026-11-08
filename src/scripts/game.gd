@@ -270,14 +270,8 @@ func _process(delta: float) -> void:
 	_update_ui()
 
 
-## Verarbeitet alle diskreten Eingaben (Move, Rotate, Hard/Soft-Drop, Restart).
+## Verarbeitet alle diskreten Eingaben (Move, Rotate, Hard/Soft-Drop).
 func _unhandled_input(event: InputEvent) -> void:
-	# Einzelspieler-Neustart über Hard-Drop bei Game Over.
-	if game_over and not is_multiplayer and not lobby.visible and not summary.visible:
-		if event.is_action_pressed("hard_drop"):
-			_start_single_player()
-			get_viewport().set_input_as_handled()
-		return
 	if lobby.visible or summary.visible or game_over:
 		return
 	if _game_input.handle_event(event):
