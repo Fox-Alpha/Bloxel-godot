@@ -52,6 +52,7 @@ var _client_connected: bool = false
 @onready var _multiplayer_manager: Node = get_parent().get("mp_manager")
 #endregion
 
+
 #region Lifecycle
 ## Löst je nach Rolle den passenden Button aus. Ohne [code]--instance=N[/code] passiert nichts.
 func _ready() -> void:
@@ -71,6 +72,7 @@ func _ready() -> void:
 			_press_button.call_deferred(_join_button)
 #endregion
 
+
 #region Signal Setup
 ## Verbindet die Rückmeldungen des Verbindungsaufbaus für die Rolle Client.
 func _setup_signals() -> void:
@@ -78,6 +80,7 @@ func _setup_signals() -> void:
 	_multiplayer_manager.connect("join_success", _on_multiplayer_manager_join_success)
 	_multiplayer_manager.connect("join_failed", _on_multiplayer_manager_join_failed)
 #endregion
+
 
 #region Private Funcs
 ## Liest die Nummer der Instanz aus den Startargumenten.
@@ -118,6 +121,7 @@ func _press_button(button: Button) -> void:
 func _log(message: String) -> void:
 	print("[PID:", OS.get_process_id(), "] DevAutostart: ", message)
 #endregion
+
 
 #region Signal Callbacks
 ## Merkt sich die erfolgreiche Verbindung, spätere Trennungen lösen keinen neuen Versuch aus.
