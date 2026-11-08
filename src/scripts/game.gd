@@ -24,25 +24,19 @@ enum PieceType {
 #region Constants
 
 ## Spalten im Spielfeld.
-const COLS := 10
+const COLS := BoardLogic.COLS
 ## Sichtbare Reihen im Spielfeld.
-const ROWS := 20
+const ROWS := BoardLogic.ROWS
 ## Versteckte Reihen oberhalb des sichtbaren Bereichs (Spawn-Schutz).
-const HIDDEN := 2
+const HIDDEN := BoardLogic.HIDDEN
 ## Gesamtreihen inklusive verstecktem Bereich.
-const TOTAL_ROWS := ROWS + HIDDEN
+const TOTAL_ROWS := BoardLogic.TOTAL_ROWS
 ## Pixelgrösse einer Zelle.
 const CELL := 32
 ## Y-Position des Spielfeld-Origins.
 const BOARD_Y := 40
 ## Y-Position der Vorschau.
 const PREVIEW_Y := 196
-## Alphawert des Ghost-Pieces.
-const GHOST_ALPHA := 0.25
-## Verzögerung vor DAS-Wiederholung (Sekunden).
-const DAS_DELAY := 0.17
-## Wiederholrate während DAS (Sekunden).
-const DAS_RATE := 0.05
 ## Sync-Intervall für Multiplayer (Sekunden).
 const SYNC_INTERVAL := 0.1
 ## Anteil des Viewports für den lokalen Spielbereich (Multiplayer).
@@ -129,16 +123,15 @@ var total_pieces: int = 0
 var drop_timer: float = 0.0
 ## Intervall zwischen Drop-Schritten (abhängig von Level).
 var drop_interval: float = 0.8
-## Timer für DAS-Wiederholung (kumuliert delta).
-var das_timer: float = 0.0
-## Aktuelle DAS-Richtung: -1 = links, 0 = keine, 1 = rechts.
-var das_dir: int = 0
 ## Lock-Delay-Timer: zählt hoch, solange das Stück aufliegt.
 var lock_timer: float = 0.0
 ## Anzahl Lock-Resets in der aktuellen Aufliege-Phase.
 var lock_reset_count: int = 0
 ## Soft-Drop-Status, einmal pro Frame erfasst (konsistent im while-Loop).
 var _soft_drop_active: bool = false
+
+## Übersetzt Tasten in Spielbefehle und wiederholt gehaltene Seitwärtsbewegungen.
+var _game_input := GameInput.new()
 
 #endregion
 
@@ -217,6 +210,9 @@ func _ready() -> void:
 	summary.back_pressed.connect(_on_summary_back)
 	mp_manager.peer_disconnected.connect(_on_peer_disconnected)
 	lobby.visibility_changed.connect(_on_lobby_visibility_changed)
+	_game_input.move_requested.connect(_move)
+	_game_input.rotate_requested.connect(_rotate_cw)
+	_game_input.hard_drop_requested.connect(_hard_drop)
 	lobby.show()
 	_on_lobby_visibility_changed()
 	for c in $UI.get_children():
@@ -259,15 +255,9 @@ func _process(delta: float) -> void:
 			lock_timer = 0.0
 			lock_reset_count = 0
 	# DAS-Repeat: gehaltene Taste ist in _process sicher auswertbar.
-	if das_dir != 0:
-		var action_name := "move_left" if das_dir == -1 else "move_right"
-		if Input.is_action_pressed(action_name):
-			das_timer += delta
-			while das_timer >= DAS_DELAY + DAS_RATE:
-				das_timer -= DAS_RATE
-				_move(das_dir, 0)
-		else:
-			das_dir = 0
+	var left_pressed := Input.is_action_pressed("move_left")
+	var right_pressed := Input.is_action_pressed("move_right")
+	_game_input.update(delta, left_pressed, right_pressed)
 	if is_multiplayer:
 		sync_timer += delta
 		if sync_timer >= SYNC_INTERVAL:
@@ -286,30 +276,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if lobby.visible or summary.visible or game_over:
 		return
-	if event.is_action_pressed("hard_drop"):
-		_hard_drop()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("rotate"):
-		_rotate_cw()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_left"):
-		_move(-1, 0)
-		das_dir = -1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("move_right"):
-		_move(1, 0)
-		das_dir = 1
-		das_timer = 0.0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("soft_drop"):
-		_move(0, 1)
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_left") and das_dir == -1:
-		das_dir = 0
-		get_viewport().set_input_as_handled()
-	elif event.is_action_released("move_right") and das_dir == 1:
-		das_dir = 0
+	if _game_input.handle_event(event):
 		get_viewport().set_input_as_handled()
 
 
@@ -319,11 +286,16 @@ func _draw() -> void:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0.05, 0.05, 0.08))
 		return
-	_draw_board(board_x, BOARD_Y, CELL, false)
+	var origin := Vector2i(board_x, BOARD_Y)
+	GameRenderer.draw_board(self, board, origin, CELL)
+	_draw_active_piece(origin)
 	if is_multiplayer and not opponent_board.is_empty():
-		_draw_board(opp_board_x, opp_board_y, opp_cell, true)
+		var opp_origin := Vector2i(opp_board_x, opp_board_y)
+		GameRenderer.draw_board(
+				self, opponent_board, opp_origin, opp_cell, GameRenderer.OPPONENT_ALPHA,
+		)
 	preview_x = board_x + COLS * CELL + GRID_BORDER * 2 + UI_OFFSET_X
-	_draw_preview()
+	GameRenderer.draw_preview(self, next_type, Vector2(preview_x, PREVIEW_Y - 4), CELL)
 	if game_over or summary.visible:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0, 0, 0, 0.55))
@@ -402,7 +374,7 @@ func _start_multiplayer() -> void:
 
 ## Initialisiert Board, Bag und Zustand für ein neues Spiel.
 func _new_game() -> void:
-	board = _create_empty_board()
+	board = BoardLogic.create_empty()
 	bag = []
 	score = 0
 	lines_total = 0
@@ -423,17 +395,6 @@ func _new_game() -> void:
 	summary.hide()
 	time_label.show()
 	queue_redraw()
-
-
-## Erzeugt ein leeres Board (TOTAL_ROWS × COLS) mit unabhängigen Zeilen.
-func _create_empty_board() -> Array:
-	var b: Array = []
-	for i in range(TOTAL_ROWS):
-		var r: Array = []
-		r.resize(COLS)
-		r.fill(0)
-		b.append(r)
-	return b
 
 #endregion
 
@@ -482,16 +443,7 @@ func _spawn() -> void:
 ## [param py] — Y-Position des Piece-Origins.
 ## [return] — true wenn die Position gültig ist.
 func _is_valid(cels: Array, px: int, py: int) -> bool:
-	for cell in cels:
-		var cx := px + int(cell.x)
-		var cy := py + int(cell.y)
-		if cx < 0 or cx >= COLS or cy >= TOTAL_ROWS:
-			return false
-		if cy < 0:
-			continue
-		if board[cy][cx] != 0:
-			return false
-	return true
+	return BoardLogic.is_valid(board, cels, px, py)
 
 
 ## Prüft, ob das aktuelle Stück nicht weiter nach unten kann (aufliegt).
@@ -558,10 +510,7 @@ func _rotate_cw() -> void:
 func _hard_drop() -> void:
 	if game_over:
 		return
-	var cels: Array = _get_cells(current.type, current.rot)
-	var gy: int = current.y
-	while _is_valid(cels, current.x, gy + 1):
-		gy += 1
+	var gy := _ghost_y()
 	# 2 Punkte pro zurückgelegter Reihe (Hard-Drop-Bonus).
 	score += (gy - current.y) * 2
 	current.y = gy
@@ -583,12 +532,7 @@ func _drop() -> void:
 ## Schreibt das aktuelle Piece ins Board, löscht volle Linien und spawnt nächstes.
 func _lock() -> void:
 	var cels: Array = _get_cells(current.type, current.rot)
-	for cell in cels:
-		var cx: int = current.x + int(cell.x)
-		var cy: int = current.y + int(cell.y)
-		# Nur im sichtbaren + versteckten Bereich schreiben (Zellen oberhalb ignorieren).
-		if cy >= 0 and cy < TOTAL_ROWS and cx >= 0 and cx < COLS:
-			board[cy][cx] = current.type
+	BoardLogic.lock_piece(board, cels, current.x, current.y, current.type)
 	total_pieces += 1
 	lock_timer = 0.0
 	lock_reset_count = 0
@@ -601,26 +545,7 @@ func _lock() -> void:
 ## Entfernt volle Reihen, aktualisiert Punktzahl und Level.
 ## Punkte-Skala: 1/2/3/4 Lines → 100/300/500/800 × (level + 1).
 func _clear_lines() -> void:
-	var cleared := 0
-	# Von unten nach oben prüfen, damit indices nach shift korrekt bleiben.
-	var r := TOTAL_ROWS - 1
-	while r >= 0:
-		var full := true
-		for c in range(COLS):
-			if board[r][c] == 0:
-				full = false
-				break
-		if full:
-			# Alle Reihen oberhalb nach unten verschieben.
-			for rr in range(r, 0, -1):
-				board[rr] = board[rr - 1].duplicate()
-			var empty: Array = []
-			empty.resize(COLS)
-			empty.fill(0)
-			board[0] = empty
-			cleared += 1
-		else:
-			r -= 1
+	var cleared := BoardLogic.clear_full_lines(board)
 	if cleared > 0:
 		var points_per_line: Array[int] = [0, 100, 300, 500, 800]
 		score += points_per_line[cleared] * (level + 1)
@@ -741,10 +666,7 @@ func _on_opponent_topped_out() -> void:
 ## [return] — Y-Position des Aufsetzpunkts.
 func _ghost_y() -> int:
 	var cels: Array = _get_cells(current.type, current.rot)
-	var gy: int = current.y
-	while _is_valid(cels, current.x, gy + 1):
-		gy += 1
-	return gy
+	return BoardLogic.drop_y(board, cels, current.x, current.y)
 
 #endregion
 
@@ -796,102 +718,17 @@ func _draw_ui_labels() -> void:
 
 #region Drawing
 
-## Zeichnet ein Spielfeld (eigenes oder Gegner) inkl. Grid, Blöcke und Ghost.
-## [param origin_x] — X-Position des Board-Origins.
-## [param origin_y] — Y-Position des Board-Origins.
-## [param cell_size] — Pixelgrösse einer Zelle.
-## [param is_opponent] — Ob das Gegner-Board gezeichnet wird.
-func _draw_board(origin_x: int, origin_y: int, cell_size: int, is_opponent: bool) -> void:
-	var border := Color(0.3, 0.3, 0.4)
-	var bg := Color(0.05, 0.05, 0.08)
-	var grid := Color(0.2, 0.2, 0.25)
-	var bw := COLS * cell_size
-	var bh := ROWS * cell_size
-	draw_rect(Rect2(origin_x - 2, origin_y - 2, bw + 4, bh + 4), border)
-	draw_rect(Rect2(origin_x, origin_y, bw, bh), bg)
-	for c in range(COLS + 1):
-		var x := origin_x + c * cell_size
-		draw_line(Vector2(x, origin_y), Vector2(x, origin_y + bh), grid)
-	for r in range(ROWS + 1):
-		var y := origin_y + r * cell_size
-		draw_line(Vector2(origin_x, y), Vector2(origin_x + bw, y), grid)
-	# Eigenes oder Gegner-Board als Block-Quelle verwenden.
-	var src_board: Array = opponent_board if is_opponent else board
-	for row in range(HIDDEN, TOTAL_ROWS):
-		for col in range(COLS):
-			var t: int = 0
-			if not src_board.is_empty() and row < src_board.size():
-				t = src_board[row][col]
-			if t != 0:
-				var rect := Rect2(
-					origin_x + col * cell_size + 1,
-					origin_y + (row - HIDDEN) * cell_size + 1,
-					cell_size - 2,
-					cell_size - 2,
-				)
-				var block_col := _get_opp_color(t) if is_opponent else PieceData.get_color(t)
-				draw_rect(rect, block_col)
-	# Ghost-Piece (transparent) + aktives Piece (deckend) zeichnen.
-	if not is_opponent and not game_over and not current.is_empty():
-		var g := _ghost_y()
-		_draw_piece(
-			current.type, current.rot, current.x, g, GHOST_ALPHA,
-			origin_x, origin_y, cell_size,
-		)
-		_draw_piece(
-			current.type, current.rot, current.x, current.y, 1.0,
-			origin_x, origin_y, cell_size,
-		)
-
-
-## Gibt die Farbe eines Gegner-Blocks mit reduzierter Transparenz zurück.
-func _get_opp_color(typ: int) -> Color:
-	var c: Color = PieceData.get_color(typ)
-	c.a = 0.7
-	return c
-
-
-## Zeichnet ein einzelnes Piece auf dem Spielfeld (für Ghost und aktuelles Piece).
-## [param typ] — PieceType.
-## [param rot] — Rotation 0–3.
-## [param px] — X-Position des Piece-Origins.
-## [param py] — Y-Position des Piece-Origins.
-## [param alpha] — Transparenzwert (0.0–1.0).
-## [param origin_x] — Board-Origin X.
-## [param origin_y] — Board-Origin Y.
-## [param cell_size] — Pixelgrösse einer Zelle.
-func _draw_piece(
-		typ: int, rot: int, px: int, py: int, alpha: float,
-		origin_x: int, origin_y: int, cell_size: int,
-) -> void:
-	var cels: Array = _get_cells(typ, rot)
-	var col: Color = PieceData.get_color(typ)
-	col.a = alpha
-	for cell in cels:
-		var cx := px + int(cell.x)
-		var cy := py + int(cell.y)
-		if cy < HIDDEN or cy >= TOTAL_ROWS:
-			continue
-		var rect := Rect2(
-			origin_x + cx * cell_size + 1,
-			origin_y + (cy - HIDDEN) * cell_size + 1,
-			cell_size - 2,
-			cell_size - 2,
-		)
-		draw_rect(rect, col)
-
-
-## Zeichnet die Vorschau des nächsten Pieces.
-func _draw_preview() -> void:
-	if not PieceData.PIECE_CELLS.has(next_type):
+## Zeichnet Ghost Piece und aktives Stück auf das eigene Spielfeld.
+## [param origin] — Pixelposition des Spielfelds.
+func _draw_active_piece(origin: Vector2i) -> void:
+	if game_over or current.is_empty():
 		return
-	var cels: Array = PieceData.PIECE_CELLS[next_type]
-	var col: Color = PieceData.get_color(next_type)
-	var ps := CELL * 0.8
-	var py := PREVIEW_Y - 4
-	draw_rect(Rect2(preview_x - 4, py, 5 * ps, 5 * ps), Color(0.1, 0.1, 0.12))
-	for cell in cels:
-		draw_rect(Rect2(preview_x + cell.x * ps, py + cell.y * ps, ps - 2, ps - 2), col)
+	var ghost_pos := Vector2i(current.x, _ghost_y())
+	var piece_pos := Vector2i(current.x, current.y)
+	GameRenderer.draw_piece(
+			self, current.type, current.rot, ghost_pos, GameRenderer.GHOST_ALPHA, origin, CELL,
+	)
+	GameRenderer.draw_piece(self, current.type, current.rot, piece_pos, 1.0, origin, CELL)
 
 #endregion
 

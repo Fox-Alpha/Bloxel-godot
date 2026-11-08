@@ -17,7 +17,10 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
 
   | Datei | Aufgabe |
   |---|---|
-  | `game.gd` | Spielablauf, Eingabe, Kollision, Punkte, Ghost Piece, DAS/ARR, Lock Delay, Runden |
+  | `game.gd` | Spielablauf, Schwerkraft, Lock Delay, Punkte, UI-Labels, Multiplayer-Sync, Runden |
+  | `board_logic.gd` | Regeln des Spielfelds: Kollision, Festsetzen, Reihen löschen |
+  | `game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `game.gd` |
+  | `game_input.gd` | Übersetzt Tasten in Signale, DAS/ARR |
   | `piece_data.gd` | Daten der Spielsteine |
   | `board_codec.gd` | Board für die Übertragung kodieren und dekodieren |
   | `lobby.gd` | Lobby, Host/Join, Spielername |

@@ -36,12 +36,13 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#13–#20).
 | Schritt | Inhalt |
 |---|---|
 | 1 | `board_logic.gd` auslagern (Board-Clear, Collision, Valid) |
-| 2 | `game_renderer.gd` auslagern (Draw-Board, Draw-Piece, UI-Labels) |
-| 3 | `game_input.gd` auslagern (DAS/ARR, Lock-Delay, Move/Rotate/Dispatch) |
+| 2 | `game_renderer.gd` auslagern (Draw-Board, Draw-Piece, UI-Labels bleiben in `game.gd`) |
+| 3 | `game_input.gd` auslagern (DAS/ARR, Move/Rotate/Dispatch, Lock-Delay bleibt in `game.gd`) |
 | 4 | `game.gd` als Orchestrator auf ~300 Zeilen reduzieren |
 | 5 | Signal-Kommunikation zwischen Split-Scripts einrichten |
 
-**Ergebnis:** `game.gd` von 1.054 → ~300 Zeilen, klare SRP pro Datei.
+**Ergebnis:** `game.gd` von 1.095 auf 932 Zeilen. Die ~300 waren eine grobe Schätzung, übrig sind vor allem
+Zustandsvariablen, Multiplayer mit RPCs und Game Over.
 
 ---
 
