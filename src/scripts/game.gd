@@ -644,6 +644,7 @@ func _trigger_game_over() -> void:
 func _send_game_over_to_opponent() -> void:
 	if not is_multiplayer:
 		return
+	Log.info("[PID:%d] Game Over gesendet:" % OS.get_process_id(), _build_local_stats())
 	_rpc_send_game_over.rpc_id(
 		mp_manager.opponent_id,
 		score, lines_total, level, play_time, total_pieces,
@@ -655,6 +656,7 @@ func _send_game_over_to_opponent() -> void:
 func _send_final_stats_to_opponent() -> void:
 	if not is_multiplayer:
 		return
+	Log.info("[PID:%d] Endwerte gesendet:" % OS.get_process_id(), _build_local_stats())
 	_rpc_send_final_stats.rpc_id(
 		mp_manager.opponent_id,
 		score, lines_total, level, play_time, total_pieces,
@@ -965,6 +967,7 @@ func _rpc_send_game_over(
 		play_time = opp_time,
 		pieces = opp_pieces,
 	}
+	Log.info("[PID:%d] Game Over empfangen:" % OS.get_process_id(), os)
 	if game_over:
 		# Wir haben bereits getoppt → gleichzeitiges Top-Out: Stats ergänzen
 		# und Winner über Score-Vergleich neu bestimmen.
@@ -995,6 +998,7 @@ func _rpc_send_final_stats(
 		play_time = opp_time,
 		pieces = opp_pieces,
 	}
+	Log.info("[PID:%d] Endwerte empfangen:" % OS.get_process_id(), os)
 	summary.update_opponent_stats(os, opponent_topped_out)
 
 
