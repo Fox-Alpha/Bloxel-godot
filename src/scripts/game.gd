@@ -93,7 +93,7 @@ const OPP_TOP_GRACE := 1.5
 ## Spielfeld als 2D-Array (TOTAL_ROWS × COLS), 0 = leer, sonst PieceType.
 var board: Array = []
 ## Aktuell fallendes Piece: {type, rot, x, y}.
-var current: Dictionary = {}
+var current: Dictionary = { }
 ## PieceType des nächsten Pieces (Vorschau).
 var next_type: int = 0
 ## 7-Bag für zufällige Piece-Reihenfolge.
@@ -194,6 +194,7 @@ var opp_top_grace: float = 0.0
 
 #endregion
 
+
 #region Lifecycle
 
 ## Initialisiert Layout und verbindet UI-Signale.
@@ -290,9 +291,7 @@ func _draw() -> void:
 	_draw_active_piece(origin)
 	if is_multiplayer and not opponent_board.is_empty():
 		var opp_origin := Vector2i(opp_board_x, opp_board_y)
-		GameRenderer.draw_board(
-				self, opponent_board, opp_origin, opp_cell, GameRenderer.OPPONENT_ALPHA,
-		)
+		GameRenderer.draw_board(self, opponent_board, opp_origin, opp_cell, GameRenderer.OPPONENT_ALPHA)
 	preview_x = board_x + COLS * CELL + GRID_BORDER * 2 + UI_OFFSET_X
 	GameRenderer.draw_preview(self, next_type, Vector2(preview_x, PREVIEW_Y - 4), CELL)
 	if game_over or summary.visible:
@@ -301,6 +300,7 @@ func _draw() -> void:
 	_draw_ui_labels()
 
 #endregion
+
 
 #region Initialization
 
@@ -333,6 +333,7 @@ func _set_ui_font_sizes() -> void:
 	time_label.add_theme_font_size_override("font_size", fs)
 
 #endregion
+
 
 #region Game start
 
@@ -397,6 +398,7 @@ func _new_game() -> void:
 
 #endregion
 
+
 #region Piece generation
 
 ## Zieht den nächsten Piece-Typ aus dem 7-Bag.
@@ -419,11 +421,12 @@ func _get_cells(typ: int, rot: int) -> Array:
 
 #endregion
 
+
 #region Spawn / movement / rotation
 
 ## Spawnt das nächste Piece und prüft auf Game Over (Block-Out).
 func _spawn() -> void:
-	current = {type = next_type, rot = 0, x = 3, y = HIDDEN - 2}
+	current = { type = next_type, rot = 0, x = 3, y = HIDDEN - 2 }
 	if next_type == PieceType.O:
 		current.x = 4
 	next_type = _pop_bag()
@@ -502,6 +505,7 @@ func _rotate_cw() -> void:
 
 #endregion
 
+
 #region Drop / lock / clear
 
 ## Lässt das Piece sofort auf die unterste gültige Position fallen.
@@ -556,6 +560,7 @@ func _clear_lines() -> void:
 
 #endregion
 
+
 #region Game over
 
 ## Zeigt Game-Over-Label, benachrichtigt Gegner (MP) und zeigt Summary (SP).
@@ -571,10 +576,7 @@ func _send_game_over_to_opponent() -> void:
 	if not is_multiplayer:
 		return
 	Log.info("[PID:%d] Game Over gesendet:" % OS.get_process_id(), _build_local_stats())
-	_rpc_send_game_over.rpc_id(
-		mp_manager.opponent_id,
-		score, lines_total, level, play_time, total_pieces,
-	)
+	_rpc_send_game_over.rpc_id(mp_manager.opponent_id, score, lines_total, level, play_time, total_pieces)
 
 
 ## Sendet als Gewinner die eigenen End-Statistiken an den Verlierer.
@@ -583,21 +585,12 @@ func _send_final_stats_to_opponent() -> void:
 	if not is_multiplayer:
 		return
 	Log.info("[PID:%d] Endwerte gesendet:" % OS.get_process_id(), _build_local_stats())
-	_rpc_send_final_stats.rpc_id(
-		mp_manager.opponent_id,
-		score, lines_total, level, play_time, total_pieces,
-	)
+	_rpc_send_final_stats.rpc_id(mp_manager.opponent_id, score, lines_total, level, play_time, total_pieces)
 
 
 ## Baut das lokale Statistik-Dictionary für die Summary.
 func _build_local_stats() -> Dictionary:
-	return {
-		score = score,
-		lines = lines_total,
-		level = level,
-		play_time = play_time,
-		pieces = total_pieces,
-	}
+	return { score = score, lines = lines_total, level = level, play_time = play_time, pieces = total_pieces }
 
 
 ## Zeigt die Summary mit den bereits bekannten Gegner-Daten.
@@ -611,13 +604,9 @@ func _show_summary_with_synced_opponent_data() -> void:
 			play_time = 0.0,
 			pieces = 0,
 		}
-		summary.show_summary(
-			local_stats, os, true, round_num,
-			player_name, opponent_name,
-			i_lost, opponent_topped_out,
-		)
+		summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost, opponent_topped_out)
 	else:
-		summary.show_summary(local_stats, {}, false)
+		summary.show_summary(local_stats, { }, false)
 	queue_redraw()
 
 
@@ -626,9 +615,14 @@ func _show_summary_with_synced_opponent_data() -> void:
 func _show_summary_with_received_data(opponent_stats: Dictionary) -> void:
 	var local_stats := _build_local_stats()
 	summary.show_summary(
-		local_stats, opponent_stats, true, round_num,
-		player_name, opponent_name,
-		i_lost, opponent_topped_out,
+		local_stats,
+		opponent_stats,
+		true,
+		round_num,
+		player_name,
+		opponent_name,
+		i_lost,
+		opponent_topped_out,
 	)
 	queue_redraw()
 
@@ -643,21 +637,12 @@ func _on_opponent_topped_out() -> void:
 	game_over = true
 	game_over_label.show()
 	var local_stats := _build_local_stats()
-	var os := {
-		score = opponent_score,
-		lines = opponent_lines,
-		level = opponent_level,
-		play_time = 0.0,
-		pieces = 0,
-	}
-	summary.show_summary(
-		local_stats, os, true, round_num,
-		player_name, opponent_name,
-		i_lost, opponent_topped_out,
-	)
+	var os := { score = opponent_score, lines = opponent_lines, level = opponent_level, play_time = 0.0, pieces = 0 }
+	summary.show_summary(local_stats, os, true, round_num, player_name, opponent_name, i_lost, opponent_topped_out)
 	queue_redraw()
 
 #endregion
+
 
 #region Ghost
 
@@ -668,6 +653,7 @@ func _ghost_y() -> int:
 	return BoardLogic.drop_y(board, cels, current.x, current.y)
 
 #endregion
+
 
 #region UI
 
@@ -715,6 +701,7 @@ func _draw_ui_labels() -> void:
 
 #endregion
 
+
 #region Drawing
 
 ## Zeichnet Ghost Piece und aktives Stück auf das eigene Spielfeld.
@@ -724,12 +711,11 @@ func _draw_active_piece(origin: Vector2i) -> void:
 		return
 	var ghost_pos := Vector2i(current.x, _ghost_y())
 	var piece_pos := Vector2i(current.x, current.y)
-	GameRenderer.draw_piece(
-			self, current.type, current.rot, ghost_pos, GameRenderer.GHOST_ALPHA, origin, CELL,
-	)
+	GameRenderer.draw_piece(self, current.type, current.rot, ghost_pos, GameRenderer.GHOST_ALPHA, origin, CELL)
 	GameRenderer.draw_piece(self, current.type, current.rot, piece_pos, 1.0, origin, CELL)
 
 #endregion
+
 
 #region Multiplayer sync
 
@@ -768,16 +754,17 @@ func _on_peer_disconnected() -> void:
 
 #endregion
 
+
 #region RPCs
 
 @rpc("any_peer", "unreliable", "call_local")
 ## [rpc("any_peer", "unreliable", "call_local")] Synchronisiert Board und Score vom Gegner.
 func _rpc_sync_state(
-		data: PackedByteArray,
-		opp_score: int,
-		opp_lines: int,
-		opp_level: int,
-		opp_game_over: bool,
+	data: PackedByteArray,
+	opp_score: int,
+	opp_lines: int,
+	opp_level: int,
+	opp_game_over: bool,
 ) -> void:
 	if not is_multiplayer:
 		return
@@ -795,16 +782,8 @@ func _rpc_sync_state(
 
 @rpc("any_peer", "reliable")
 ## [rpc("any_peer", "reliable")] Empfängt Game-Over-Daten vom Gegner und zeigt Summary.
-func _rpc_send_game_over(
-		opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int,
-) -> void:
-	var os := {
-		score = opp_score,
-		lines = opp_lines,
-		level = opp_level,
-		play_time = opp_time,
-		pieces = opp_pieces,
-	}
+func _rpc_send_game_over(opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int) -> void:
+	var os := { score = opp_score, lines = opp_lines, level = opp_level, play_time = opp_time, pieces = opp_pieces }
 	Log.info("[PID:%d] Game Over empfangen:" % OS.get_process_id(), os)
 	if game_over:
 		# Wir haben bereits getoppt → gleichzeitiges Top-Out: Stats ergänzen
@@ -826,16 +805,8 @@ func _rpc_send_game_over(
 
 @rpc("any_peer", "reliable")
 ## [rpc("any_peer", "reliable")] Ergänzt die Summary des Verlierers um die Endwerte des Gewinners.
-func _rpc_send_final_stats(
-		opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int,
-) -> void:
-	var os := {
-		score = opp_score,
-		lines = opp_lines,
-		level = opp_level,
-		play_time = opp_time,
-		pieces = opp_pieces,
-	}
+func _rpc_send_final_stats(opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int) -> void:
+	var os := { score = opp_score, lines = opp_lines, level = opp_level, play_time = opp_time, pieces = opp_pieces }
 	Log.info("[PID:%d] Endwerte empfangen:" % OS.get_process_id(), os)
 	summary.update_opponent_stats(os, opponent_topped_out)
 
@@ -889,6 +860,7 @@ func _reset_multiplayer_state() -> void:
 	summary.hide()
 
 #endregion
+
 
 #region Summary callbacks
 

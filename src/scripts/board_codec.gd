@@ -5,6 +5,7 @@ extends RefCounted
 ## Trennt die Serialisierungslogik vom Spielcode, um Netzwerk-Übertragung
 ## isoliert testen zu können.
 
+
 #region Public API
 
 ## Kodiert das Board als kompaktes PackedByteArray.

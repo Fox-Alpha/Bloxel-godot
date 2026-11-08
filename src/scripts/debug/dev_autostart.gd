@@ -134,9 +134,10 @@ func _on_multiplayer_manager_join_failed(_reason: String) -> void:
 		return
 
 	_client_retries += 1
-	Log.log("[PID:%d] DevAutostart: Neuer Verbindungsversuch %d/%d" % [
-		OS.get_process_id(), _client_retries, CLIENT_MAX_RETRIES,
-	])
+	Log.log(
+		"[PID:%d] DevAutostart: Neuer Verbindungsversuch %d/%d"
+		% [OS.get_process_id(), _client_retries, CLIENT_MAX_RETRIES]
+	)
 	# Kurze Pause, damit der Host Zeit zum Starten hat.
 	await get_tree().create_timer(CLIENT_RETRY_DELAY).timeout
 	_press_button(_join_button)

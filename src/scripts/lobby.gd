@@ -47,6 +47,7 @@ func _set_window_role(window_role: String) -> void:
 	_window_role = window_role
 	_set_pid_title()
 
+
 func _ready() -> void:
 	var pid := OS.get_process_id()
 	Log.log("[PID:%d] lobby _ready" % pid)

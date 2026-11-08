@@ -19,8 +19,8 @@ signal back_pressed()
 @onready var winner_label: Label = $Panel/Margin/VBox/WinnerLabel
 
 # Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
-var _local_data: Dictionary = {}
-var _opponent_data: Dictionary = {}
+var _local_data: Dictionary = { }
+var _opponent_data: Dictionary = { }
 var _local_name: String = "YOU"
 var _opp_name: String = "OPPONENT"
 var _local_lost: bool = false
@@ -44,14 +44,14 @@ func _ready() -> void:
 ## [param local_lost] — Ob der lokale Spieler getoppt hat.
 ## [param opponent_lost] — Ob der Gegner getoppt hat.
 func show_summary(
-		local_data: Dictionary,
-		opponent: Dictionary = {},
-		is_multiplayer: bool = false,
-		round_num: int = 0,
-		local_name: String = "YOU",
-		opp_name: String = "OPPONENT",
-		local_lost: bool = false,
-		opponent_lost: bool = false,
+	local_data: Dictionary,
+	opponent: Dictionary = { },
+	is_multiplayer: bool = false,
+	round_num: int = 0,
+	local_name: String = "YOU",
+	opp_name: String = "OPPONENT",
+	local_lost: bool = false,
+	opponent_lost: bool = false,
 ) -> void:
 	_local_data = local_data
 	_opponent_data = opponent

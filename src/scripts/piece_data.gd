@@ -69,6 +69,7 @@ const I_KICKS := {
 
 #endregion
 
+
 #region Public API
 
 ## Berechnet die Zell-Positionen eines Stücks in einer gegebenen Rotation.

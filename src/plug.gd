@@ -10,29 +10,20 @@ extends "res://addons/gd-plug/plug.gd"
 ## Deklariert die Addons. Standardmäßig wird nur der Ordner [code]addons/[/code] eines Repos installiert.
 func _plugging() -> void:
 	# Logging
-	plug("Fox-Alpha/log.gd-fork", {
-		"branch": "develope",
-		"include": ["addons/log/"],
-		"install_root": "addons/log/",
-	})
+	plug("Fox-Alpha/log.gd-fork", { "branch": "develope", "include": ["addons/log/"], "install_root": "addons/log/" })
 
 	# Werkzeuge
 	# Nur die Editor-Variante: Der Variante "standalone" fehlt im Repo die kompilierte Bibliothek.
-	plug("GDQuest/GDScript-formatter", {
-		"dev": true,
-		"include": ["addons/GDQuest_GDScript_formatter/"],
-	})
+	plug("GDQuest/GDScript-formatter", { "dev": true, "include": ["addons/GDQuest_GDScript_formatter/"] })
 
 	# MCP: Version gemeinsam mit dem Server-Pin in ~/.claude.json halten
-	plug("hi-godot/godot-ai", {
-		"dev": true,
-		"tag": "v4.4.1",
-		"include": ["plugin/addons/godot_ai/"],
-		"install_root": "addons/godot_ai",
-	})
+	plug(
+		"hi-godot/godot-ai",
+		{ "dev": true, "tag": "v4.4.1", "include": ["plugin/addons/godot_ai/"], "install_root": "addons/godot_ai" },
+	)
 
 	# Unit-Tests
-	plug("bitwes/Gut", {"dev": true, "tag": "v9.7.1"})
+	plug("bitwes/Gut", { "dev": true, "tag": "v9.7.1" })
 
 	# Discord-Anbindung (zurückgestellt, siehe Branch feature/addon_discord_rpc). Tag beim Aktivieren festlegen.
 	#plug("https://codeberg.org/DiscordGodot/RPC-Legacy.git")
