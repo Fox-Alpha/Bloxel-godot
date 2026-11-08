@@ -16,6 +16,8 @@ signal game_started()
 
 var _connecting: bool = false
 var player_name: String = ""
+## Rolle dieser Instanz für den Fenstertitel, leer solange keine Verbindung besteht.
+var _window_role: String = ""
 
 
 func get_display_name(is_host_role: bool) -> String:
@@ -33,8 +35,15 @@ func get_display_name(is_host_role: bool) -> String:
 
 func _set_pid_title() -> void:
 	var pid := OS.get_process_id()
-	var title := "Bloxel [PID: " + str(pid) + "]"
-	DisplayServer.window_set_title(title)
+	var role_text := "" if _window_role.is_empty() else _window_role + " | "
+	DisplayServer.window_set_title("Bloxel [%sPID: %d]" % [role_text, pid])
+
+
+## Merkt sich die Rolle dieser Instanz und aktualisiert den Fenstertitel.
+## [param window_role] — "Server", "Client" oder leer.
+func _set_window_role(window_role: String) -> void:
+	_window_role = window_role
+	_set_pid_title()
 
 func _ready() -> void:
 	var pid := OS.get_process_id()
@@ -89,6 +98,7 @@ func _on_host_button_pressed() -> void:
 		_set_form_enabled(true)
 		return
 	player_name = get_display_name(true)
+	_set_window_role("Server")
 	mp_manager.host(port)
 	_update_status("Hosting on port " + str(port) + "...")
 
@@ -112,6 +122,7 @@ func _on_join_button_pressed() -> void:
 		_set_form_enabled(true)
 		return
 	player_name = get_display_name(false)
+	_set_window_role("Client")
 	mp_manager.join(ip, port)
 	_update_status("Connecting to " + ip + ":" + str(port) + "...")
 
@@ -127,18 +138,21 @@ func _on_join_success() -> void:
 
 func _on_join_failed(reason: String) -> void:
 	_update_status(reason)
+	_set_window_role("")
 	_connecting = false
 	_set_form_enabled(true)
 
 
 func _on_peer_disconnected() -> void:
 	_update_status("Opponent disconnected")
+	_set_window_role("")
 	_connecting = false
 	_set_form_enabled(true)
 
 
 func reset() -> void:
 	_connecting = false
+	_set_window_role("")
 	_set_form_enabled(true)
 	_update_status("Idle")
 
