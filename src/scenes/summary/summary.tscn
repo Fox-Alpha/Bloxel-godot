@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dcsummary01"]
 
-[ext_resource type="Script" uid="uid://dafd8xfbeq7kw" path="res://scripts/summary.gd" id="1"]
+[ext_resource type="Script" uid="uid://dafd8xfbeq7kw" path="res://scenes/summary/summary.gd" id="1"]
 
 [node name="Summary" type="Control" unique_id=1717506213]
 layout_mode = 3
