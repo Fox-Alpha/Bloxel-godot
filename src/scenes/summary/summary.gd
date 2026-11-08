@@ -5,9 +5,23 @@ extends Control
 ## Die Winner-Bestimmung vergleicht bei gleichzeitigem Top-Out die Scores
 ## beider Spieler, sodass beide Bildschirme denselben Gewinner zeigen.
 
+#region Signals
 signal ready_pressed()
 signal back_pressed()
+#endregion
 
+#region Private Vars
+# Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
+var _local_data: Dictionary = { }
+var _opponent_data: Dictionary = { }
+var _local_name: String = "YOU"
+var _opp_name: String = "OPPONENT"
+var _local_lost: bool = false
+var _opponent_lost: bool = false
+var _is_multiplayer: bool = false
+#endregion
+
+#region OnReady Vars
 @onready var panel: Panel = $Panel
 @onready var title_label: Label = $Panel/Margin/VBox/TitleLabel
 @onready var round_label: Label = $Panel/Margin/VBox/RoundLabel
@@ -17,23 +31,29 @@ signal back_pressed()
 @onready var opponent_ready_label: Label = $Panel/Margin/VBox/ButtonHBox/OpponentReadyLabel
 @onready var back_button: Button = $Panel/Margin/VBox/ButtonHBox/BackButton
 @onready var winner_label: Label = $Panel/Margin/VBox/WinnerLabel
-
-# Gespeicherte Summary-Daten für Winner-Neuberechnung bei Spät-Stats.
-var _local_data: Dictionary = { }
-var _opponent_data: Dictionary = { }
-var _local_name: String = "YOU"
-var _opp_name: String = "OPPONENT"
-var _local_lost: bool = false
-var _opponent_lost: bool = false
-var _is_multiplayer: bool = false
+#endregion
 
 
+#region Static Funcs
+## Formatiert Sekunden als MM:SS.
+## [param t] — Zeit in Sekunden.
+## [return] — Formatierter Zeit-String.
+static func _format_time(t: float) -> String:
+	var minutes := int(t / 60.0)
+	var seconds := int(t) % 60
+	return "%02d:%02d" % [minutes, seconds]
+#endregion
+
+
+#region Lifecycle
 func _ready() -> void:
 	hide()
 	ready_button.pressed.connect(_on_ready_button_pressed)
 	back_button.pressed.connect(_on_back_button_pressed)
+#endregion
 
 
+#region Public Funcs
 ## Zeigt die Summary mit lokalen und gegnerischen Statistiken an.
 ## [param local_data] — Lokale End-Statistiken.
 ## [param opponent] — Gegnerische End-Statistiken (leer im Einzelspieler).
@@ -89,6 +109,12 @@ func update_opponent_stats(opponent: Dictionary, opponent_lost: bool) -> void:
 	winner_label.visible = not winner_label.text.is_empty()
 
 
+func set_opponent_ready() -> void:
+	opponent_ready_label.show()
+#endregion
+
+
+#region Private Funcs
 ## Rendert die Statistik-Labels aus den gespeicherten Daten.
 func _render_stats() -> void:
 	var fmt := _local_name + "\nScore: %d\nLines: %d\nLevel: %d\nTime: %s\nPieces: %d"
@@ -134,25 +160,14 @@ func _determine_winner() -> String:
 	return ""
 
 
-## Formatiert Sekunden als MM:SS.
-## [param t] — Zeit in Sekunden.
-## [return] — Formatierter Zeit-String.
-static func _format_time(t: float) -> String:
-	var minutes := int(t / 60.0)
-	var seconds := int(t) % 60
-	return "%02d:%02d" % [minutes, seconds]
-
-
-func set_opponent_ready() -> void:
-	opponent_ready_label.show()
-
-
 func _show_ready_button() -> void:
 	ready_button.disabled = false
 	ready_button.text = "Ready" if _is_multiplayer else "Play Again"
 	opponent_ready_label.hide()
+#endregion
 
 
+#region Signal Callbacks
 func _on_ready_button_pressed() -> void:
 	ready_button.disabled = true
 	ready_button.text = "Waiting..."
@@ -163,3 +178,4 @@ func _on_back_button_pressed() -> void:
 	opponent_ready_label.hide()
 	hide()
 	back_pressed.emit()
+#endregion

@@ -1,9 +1,22 @@
 class_name Lobby
 extends Control
 
+#region Signals
 signal single_player_requested()
 signal game_started()
+#endregion
 
+#region Public Vars
+var player_name: String = ""
+#endregion
+
+#region Private Vars
+var _connecting: bool = false
+## Rolle dieser Instanz für den Fenstertitel, leer solange keine Verbindung besteht.
+var _window_role: String = ""
+#endregion
+
+#region OnReady Vars
 @onready var title_label: Label = $VBox/TitleLabel
 @onready var name_edit: LineEdit = $VBox/NameHBox/NameEdit
 @onready var single_button: Button = $VBox/SingleButton
@@ -15,39 +28,10 @@ signal game_started()
 @onready var status_label: Label = $VBox/StatusLabel
 @onready var quit_button: Button = $VBox/QuitButton
 @onready var mp_manager: MultiplayerManager = get_node("/root/Main/MultiplayerManager")
-
-var _connecting: bool = false
-var player_name: String = ""
-## Rolle dieser Instanz für den Fenstertitel, leer solange keine Verbindung besteht.
-var _window_role: String = ""
+#endregion
 
 
-func get_display_name(is_host_role: bool) -> String:
-	var base := name_edit.text.strip_edges()
-	if base.is_empty():
-		if is_host_role:
-			base = "Spieler 1"
-		else:
-			base = "Spieler 2"
-	player_name = base
-	if is_host_role:
-		return base + " (Host)"
-	return base + " (Client)"
-
-
-func _set_pid_title() -> void:
-	var pid := OS.get_process_id()
-	var role_text := "" if _window_role.is_empty() else _window_role + " | "
-	DisplayServer.window_set_title("Bloxel [%sPID: %d]" % [role_text, pid])
-
-
-## Merkt sich die Rolle dieser Instanz und aktualisiert den Fenstertitel.
-## [param window_role] — "Server", "Client" oder leer.
-func _set_window_role(window_role: String) -> void:
-	_window_role = window_role
-	_set_pid_title()
-
-
+#region Lifecycle
 func _ready() -> void:
 	var pid := OS.get_process_id()
 	Log.log("[PID:%d] lobby _ready" % pid)
@@ -68,6 +52,47 @@ func _ready() -> void:
 	mp_manager.game_start_requested.connect(_on_game_start_requested)
 	if OS.is_debug_build():
 		add_child(DevAutostart.new())
+#endregion
+
+
+#region Public Funcs
+func get_display_name(is_host_role: bool) -> String:
+	var base := name_edit.text.strip_edges()
+	if base.is_empty():
+		if is_host_role:
+			base = "Spieler 1"
+		else:
+			base = "Spieler 2"
+	player_name = base
+	if is_host_role:
+		return base + " (Host)"
+	return base + " (Client)"
+
+
+func reset() -> void:
+	_connecting = false
+	_set_window_role("")
+	_set_form_enabled(true)
+	_update_status("Idle")
+
+
+func set_status(msg: String) -> void:
+	_update_status(msg)
+#endregion
+
+
+#region Private Funcs
+func _set_pid_title() -> void:
+	var pid := OS.get_process_id()
+	var role_text := "" if _window_role.is_empty() else _window_role + " | "
+	DisplayServer.window_set_title("Bloxel [%sPID: %d]" % [role_text, pid])
+
+
+## Merkt sich die Rolle dieser Instanz und aktualisiert den Fenstertitel.
+## [param window_role] — "Server", "Client" oder leer.
+func _set_window_role(window_role: String) -> void:
+	_window_role = window_role
+	_set_pid_title()
 
 
 func _update_status(msg: String) -> void:
@@ -82,8 +107,10 @@ func _set_form_enabled(enabled: bool) -> void:
 	port_edit.editable = enabled
 	ip_edit.editable = enabled
 	join_port_edit.editable = enabled
+#endregion
 
 
+#region Signal Callbacks
 func _on_single_button_pressed() -> void:
 	single_player_requested.emit()
 	hide()
@@ -160,18 +187,8 @@ func _on_peer_disconnected() -> void:
 	_set_form_enabled(true)
 
 
-func reset() -> void:
-	_connecting = false
-	_set_window_role("")
-	_set_form_enabled(true)
-	_update_status("Idle")
-
-
-func set_status(msg: String) -> void:
-	_update_status(msg)
-
-
 func _on_game_start_requested() -> void:
 	_connecting = false
 	game_started.emit()
 	hide()
+#endregion
