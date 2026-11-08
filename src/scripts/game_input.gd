@@ -35,7 +35,7 @@ var _das_timer: float = 0.0
 
 ## Verarbeitet ein Eingabe-Ereignis.
 ## [param event] — Das Ereignis aus [code]_unhandled_input[/code].
-## [return] — true, wenn das Ereignis ein Spielbefehl war.
+## [b]return[/b] [bool] — [code]true[/code], wenn das Ereignis ein Spielbefehl war.
 func handle_event(event: InputEvent) -> bool:
 	if event.is_action_pressed("hard_drop"):
 		hard_drop_requested.emit()
@@ -79,6 +79,7 @@ func update(delta: float, left_pressed: bool, right_pressed: bool) -> void:
 #region Private Funcs
 
 ## Führt den ersten Schritt einer Seitwärtsbewegung aus und startet die Wiederholung neu.
+## [param direction] — -1 für links, 1 für rechts.
 func _start_move(direction: int) -> void:
 	move_requested.emit(direction, 0)
 	_das_dir = direction

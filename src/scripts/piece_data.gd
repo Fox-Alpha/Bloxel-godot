@@ -75,7 +75,7 @@ const I_KICKS := {
 ## Berechnet die Zell-Positionen eines Stücks in einer gegebenen Rotation.
 ## [param typ] — Stück-Typ-Wert (1–7).
 ## [param rot] — Anzahl der 90°-Drehungen im Uhrzeigersinn (0–3).
-## [return] — Array von Vector2-Zellkoordinaten.
+## [b]return[/b] [Array] — Zellkoordinaten des Stücks als [Vector2].
 static func get_cells(typ: int, rot: int) -> Array:
 	var base: Array = PIECE_CELLS[typ]
 	var size: Vector2i = PIECE_SIZES[typ]
@@ -96,7 +96,7 @@ static func get_cells(typ: int, rot: int) -> Array:
 
 ## Liefert die Farbe eines Stück-Typs.
 ## [param typ] — Stück-Typ-Wert (0–7); 0 = leere Zelle.
-## [return] — Farbe des Stücks.
+## [b]return[/b] [Color] — Farbe des Stücks.
 static func get_color(typ: int) -> Color:
 	return COLORS[typ]
 
@@ -105,7 +105,7 @@ static func get_color(typ: int) -> Color:
 ## [param typ] — Stück-Typ-Wert (1–7).
 ## [param from_rot] — Aktuelle Rotation (0–3).
 ## [param to_rot] — Ziel-Rotation (0–3).
-## [return] — Array der Kick-Offset-Vektoren; leer bei O-Stück.
+## [b]return[/b] [Array] — Kick-Offsets als [Vector2i]; leer beim O-Stück.
 static func get_kicks(typ: int, from_rot: int, to_rot: int) -> Array:
 	var key := str(from_rot) + ">" + str(to_rot)
 	match typ:

@@ -1,11 +1,13 @@
 class_name BloxelGame
 extends Node2D
-## Hauptspiel-Logik für Bloxel Tetris.
+## Hauptspiel-Logik für Bloxel.
 ##
-## Verwaltet Spielfeld, Eingabe, Kollision, Punktzahl, Ghost-Piece,
-## DAS/ARR, Lock-Delay und Multiplayer-Sync via ENet-RPCs.
-## Stück-Definitionen und Board-Serialisierung sind in [PieceData] bzw.
-## [BoardCodec] ausgelagert.
+## Steuert den Spielablauf: Schwerkraft, Lock-Delay, Punktzahl, Level, Ghost-Piece,
+## UI-Labels, Runden und den Multiplayer-Sync via ENet-RPCs.
+## Ausgelagert sind die Regeln des Spielfelds (Kollision, Festsetzen, Reihen löschen)
+## in [BoardLogic], die Tastenauswertung samt DAS/ARR in [GameInput], das Zeichnen
+## in [GameRenderer], die Stück-Definitionen in [PieceData] und die
+## Board-Serialisierung in [BoardCodec].
 
 #region Enums
 ## Tetromino-Typen mit den Werten 1–7 (passen zu PieceData-Keys).
@@ -49,7 +51,7 @@ const UI_OFFSET_X := 20
 const UI_OFFSET_Y := 20
 ## Lock-Delay: Sekunden bis ein aufliegendes Stück einrastet.
 const LOCK_DELAY := 0.5
-## Maximalanzall Lock-Resets durch Move/Rotate bevor erzwungenes Locken.
+## Maximalanzahl Lock-Resets durch Move/Rotate bevor erzwungenes Locken.
 const MAX_LOCK_RESETS := 15
 ## Gnadenfrist (Sekunden) für reliable RPC, bevor Sync-Fallback die Summary zeigt.
 const OPP_TOP_GRACE := 1.5
@@ -370,7 +372,7 @@ func _new_game() -> void:
 
 ## Zieht den nächsten Piece-Typ aus dem 7-Bag.
 ## Füllt den Bag mit einer neuen Shuffle-Runde, wenn er zur Neige geht.
-## [return] — PieceType-Wert des nächsten Pieces.
+## [b]return[/b] [int] — PieceType-Wert des nächsten Pieces.
 func _pop_bag() -> int:
 	if bag.size() <= 1:
 		var p: Array[int] = [1, 2, 3, 4, 5, 6, 7]
@@ -382,7 +384,7 @@ func _pop_bag() -> int:
 ## Berechnet die Zell-Positionen eines Pieces in einer gegebenen Rotation.
 ## [param typ] — Der PieceType.
 ## [param rot] — Anzahl der 90°-Drehungen im Uhrzeigersinn (0–3).
-## [return] — Array von Vector2-Zellkoordinaten.
+## [b]return[/b] [Array] — Zellkoordinaten des Pieces.
 func _get_cells(typ: int, rot: int) -> Array:
 	return PieceData.get_cells(typ, rot)
 
@@ -406,7 +408,7 @@ func _spawn() -> void:
 ## [param cels] — Zell-Positionen relativ zum Piece.
 ## [param px] — X-Position des Piece-Origins.
 ## [param py] — Y-Position des Piece-Origins.
-## [return] — true wenn die Position gültig ist.
+## [b]return[/b] [bool] — [code]true[/code], wenn die Position gültig ist.
 func _is_valid(cels: Array, px: int, py: int) -> bool:
 	return BoardLogic.is_valid(board, cels, px, py)
 
@@ -427,7 +429,9 @@ func _try_reset_lock() -> void:
 
 
 ## Bewegt das aktuelle Piece um (dx, dy), wenn möglich.
-## [return] — true wenn die Bewegung ausgeführt wurde.
+## [param dx] — Verschiebung in Spalten.
+## [param dy] — Verschiebung in Reihen.
+## [b]return[/b] [bool] — [code]true[/code], wenn die Bewegung ausgeführt wurde.
 func _move(dx: int, dy: int) -> bool:
 	if game_over:
 		return false
@@ -598,7 +602,7 @@ func _on_opponent_topped_out() -> void:
 
 
 ## Ermittelt die Y-Position des Ghost-Pieces (weichster Drop).
-## [return] — Y-Position des Aufsetzpunkts.
+## [b]return[/b] [int] — Y-Position des Aufsetzpunkts.
 func _ghost_y() -> int:
 	var cels: Array = _get_cells(current.type, current.rot)
 	return BoardLogic.drop_y(board, cels, current.x, current.y)
@@ -749,7 +753,13 @@ func _on_summary_back() -> void:
 
 #region RPC
 @rpc("any_peer", "unreliable", "call_local")
-## [rpc("any_peer", "unreliable", "call_local")] Synchronisiert Board und Score vom Gegner.
+## RPC: Empfängt periodisch Board, Punktzahl, Linien, Level und Game-Over-Status des Gegners.
+## Startet bei Gegner-Game-Over die Gnadenfrist für den Sync-Fallback.
+## [param data] — Mit [BoardCodec] kodiertes Board des Gegners.
+## [param opp_score] — Punktzahl des Gegners.
+## [param opp_lines] — Gelöschte Linien des Gegners.
+## [param opp_level] — Level des Gegners.
+## [param opp_game_over] — Ob der Gegner Game Over hat.
 func _rpc_sync_state(
 	data: PackedByteArray,
 	opp_score: int,
@@ -772,7 +782,12 @@ func _rpc_sync_state(
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Empfängt Game-Over-Daten vom Gegner und zeigt Summary.
+## RPC: Empfängt die Game-Over-Daten des Gegners und zeigt die Summary.
+## [param opp_score] — Punktzahl des Gegners.
+## [param opp_lines] — Gelöschte Linien des Gegners.
+## [param opp_level] — Level des Gegners.
+## [param opp_time] — Spielzeit des Gegners in Sekunden.
+## [param opp_pieces] — Anzahl gelandeter Pieces des Gegners.
 func _rpc_send_game_over(opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int) -> void:
 	var os := { score = opp_score, lines = opp_lines, level = opp_level, play_time = opp_time, pieces = opp_pieces }
 	Log.info("[PID:%d] Game Over empfangen:" % OS.get_process_id(), os)
@@ -795,7 +810,12 @@ func _rpc_send_game_over(opp_score: int, opp_lines: int, opp_level: int, opp_tim
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Ergänzt die Summary des Verlierers um die Endwerte des Gewinners.
+## RPC: Ergänzt die Summary des Verlierers um die Endwerte des Gewinners.
+## [param opp_score] — Punktzahl des Gegners.
+## [param opp_lines] — Gelöschte Linien des Gegners.
+## [param opp_level] — Level des Gegners.
+## [param opp_time] — Spielzeit des Gegners in Sekunden.
+## [param opp_pieces] — Anzahl gelandeter Pieces des Gegners.
 func _rpc_send_final_stats(opp_score: int, opp_lines: int, opp_level: int, opp_time: float, opp_pieces: int) -> void:
 	var os := { score = opp_score, lines = opp_lines, level = opp_level, play_time = opp_time, pieces = opp_pieces }
 	Log.info("[PID:%d] Endwerte empfangen:" % OS.get_process_id(), os)
@@ -803,8 +823,8 @@ func _rpc_send_final_stats(opp_score: int, opp_lines: int, opp_level: int, opp_t
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Markiert Gegner als bereit;
-## startet nächste Runde wenn beide bereit.
+## RPC: Markiert den Gegner als bereit.
+## Der Host startet die nächste Runde, wenn beide bereit sind.
 func _rpc_opponent_ready() -> void:
 	opponent_ready = true
 	summary.set_opponent_ready()
@@ -813,7 +833,8 @@ func _rpc_opponent_ready() -> void:
 
 
 @rpc("any_peer", "reliable", "call_local")
-## [rpc("any_peer", "reliable", "call_local")] Startet eine neue Runde mit erhöhter Rundenzahl.
+## RPC: Startet auf allen Peers (auch lokal) eine neue Runde.
+## [param new_r] — Neue Rundennummer.
 func _rpc_restart(new_r: int = 0) -> void:
 	round_num = new_r
 	_reset_multiplayer_state()
@@ -821,7 +842,9 @@ func _rpc_restart(new_r: int = 0) -> void:
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Startet das Spiel auf Gegner-Seite; speichert Host-Namen.
+## RPC: Startet das Spiel auf der Gegenseite und speichert den Namen des Hosts.
+## Antwortet als Nicht-Host mit dem eigenen Namen.
+## [param host_name] — Spielername des Hosts.
 func _rpc_start_game(host_name: String) -> void:
 	opponent_name = host_name
 	lobby.hide()
@@ -831,7 +854,8 @@ func _rpc_start_game(host_name: String) -> void:
 
 
 @rpc("any_peer", "reliable")
-## [rpc("any_peer", "reliable")] Empfängt den Namen des Gegners.
+## RPC: Empfängt den Namen des Gegners und aktualisiert das Label.
+## [param n] — Spielername des Gegners.
 func _rpc_send_my_name(n: String) -> void:
 	opponent_name = n
 	_update_opponent_label()

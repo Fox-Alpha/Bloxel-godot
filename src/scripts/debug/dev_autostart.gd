@@ -76,7 +76,7 @@ func _ready() -> void:
 #region Signal Setup
 ## Verbindet die Rückmeldungen des Verbindungsaufbaus für die Rolle Client.
 func _setup_signals() -> void:
-	# Über den Namen verbinden, weil der Multiplayer-Manager noch keine class_name hat (#15).
+	# Über den Namen verbinden, weil der Multiplayer-Manager hier nur als Node typisiert ist.
 	_multiplayer_manager.connect("join_success", _on_multiplayer_manager_join_success)
 	_multiplayer_manager.connect("join_failed", _on_multiplayer_manager_join_failed)
 #endregion
