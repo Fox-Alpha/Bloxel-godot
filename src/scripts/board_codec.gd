@@ -12,7 +12,7 @@ extends RefCounted
 ## [param b] — Das Board-Array (rows × cols).
 ## [param rows] — Anzahl Reihen.
 ## [param cols] — Anzahl Spalten.
-## [return] — Bytepuffer (rows × cols Bytes).
+## [b]return[/b] [PackedByteArray] — Bytepuffer (rows × cols Bytes).
 static func encode(b: Array, rows: int, cols: int) -> PackedByteArray:
 	var pba := PackedByteArray()
 	pba.resize(rows * cols)
@@ -28,7 +28,7 @@ static func encode(b: Array, rows: int, cols: int) -> PackedByteArray:
 ## [param data] — Bytepuffer (rows × cols Bytes).
 ## [param rows] — Anzahl Reihen.
 ## [param cols] — Anzahl Spalten.
-## [return] — Rekonstruiertes Board-Array (rows × cols).
+## [b]return[/b] [Array] — Rekonstruiertes Board-Array (rows × cols).
 static func decode(data: PackedByteArray, rows: int, cols: int) -> Array:
 	var b: Array = []
 	for i in range(rows):

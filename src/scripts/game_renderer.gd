@@ -107,6 +107,11 @@ static func draw_preview(canvas: CanvasItem, typ: int, position: Vector2, cell_s
 
 
 ## Berechnet das Pixel-Rechteck einer Zelle. Die versteckten Reihen liegen oberhalb des Ursprungs.
+## [param origin] — Pixelposition der linken oberen Ecke des Spielfelds.
+## [param col] — Spalte der Zelle.
+## [param row] — Reihe der Zelle, einschließlich der versteckten Reihen.
+## [param cell_size] — Pixelgröße einer Zelle.
+## [b]return[/b] [Rect2] — Rechteck der Zelle, rundum 1 Pixel eingerückt für den Gitterabstand.
 static func _cell_rect(origin: Vector2i, col: int, row: int, cell_size: int) -> Rect2:
 	return Rect2(
 		origin.x + col * cell_size + 1,
