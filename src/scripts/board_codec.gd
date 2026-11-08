@@ -6,7 +6,7 @@ extends RefCounted
 ## isoliert testen zu können.
 
 
-#region Public API
+#region Static Funcs
 
 ## Kodiert das Board als kompaktes PackedByteArray.
 ## [param b] — Das Board-Array (rows × cols).
