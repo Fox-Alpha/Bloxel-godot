@@ -56,7 +56,7 @@ Zustandsvariablen, Multiplayer mit RPCs und Game Over.
 | `game.gd` | `TetrisGame` |
 | `lobby.gd` | `Lobby` |
 | `summary.gd` | `GameSummary` |
-| `MultiplayerManager.gd` | `MultiplayerManager` |
+| `multiplayer_manager.gd` | `MultiplayerManager` |
 
 ### #13 Docstrings konsistent 🟡
 > Profitiert von #15 (Type-Hints in Docstrings).

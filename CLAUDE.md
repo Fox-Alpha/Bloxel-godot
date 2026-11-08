@@ -12,20 +12,20 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
 ## Besonderheiten
 
 - Tetris-artiges Spiel mit 2-Spieler-Modus über ENet (Standardport 21277). Godot-Projektwurzel ist `src/`, Hauptszene
-  ist `res://main.tscn`.
-- Scripts in `src/scripts/`:
+  ist `res://scenes/main/main.tscn`.
+- Szene und Script liegen je Feature in `src/scenes/<feature>/`, Scripts ohne Szene in `src/scripts/`:
 
   | Datei | Aufgabe |
   |---|---|
-  | `game.gd` | Spielablauf, Schwerkraft, Lock Delay, Punkte, UI-Labels, Multiplayer-Sync, Runden |
-  | `board_logic.gd` | Regeln des Spielfelds: Kollision, Festsetzen, Reihen löschen |
-  | `game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `game.gd` |
-  | `game_input.gd` | Übersetzt Tasten in Signale, DAS/ARR |
-  | `piece_data.gd` | Daten der Spielsteine |
-  | `board_codec.gd` | Board für die Übertragung kodieren und dekodieren |
-  | `lobby.gd` | Lobby, Host/Join, Spielername |
-  | `summary.gd` | Auswertung nach Spielende, Rematch |
-  | `MultiplayerManager.gd` | ENet-Verbindung, Auf- und Abbau |
+  | `scenes/main/main.gd` | Spielablauf, Schwerkraft, Lock Delay, Punkte, UI-Labels, Multiplayer-Sync, Runden |
+  | `scripts/board_logic.gd` | Regeln des Spielfelds: Kollision, Festsetzen, Reihen löschen |
+  | `scripts/game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `main.gd` |
+  | `scripts/game_input.gd` | Übersetzt Tasten in Signale, DAS/ARR |
+  | `scripts/piece_data.gd` | Daten der Spielsteine |
+  | `scripts/board_codec.gd` | Board für die Übertragung kodieren und dekodieren |
+  | `scenes/lobby/lobby.gd` | Lobby, Host/Join, Spielername |
+  | `scenes/summary/summary.gd` | Auswertung nach Spielende, Rematch |
+  | `scenes/main/multiplayer_manager.gd` | ENet-Verbindung, Auf- und Abbau |
 
 - `*.uid` und `*.import` immer mitcommitten, `.tscn`-Dateien verweisen auf diese UIDs.
 - `src/addons/godot_ai/` ist seit 2026-11-08 nicht mehr versioniert. Ältere Stände und der Branch

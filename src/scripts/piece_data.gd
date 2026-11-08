@@ -69,7 +69,8 @@ const I_KICKS := {
 
 #endregion
 
-#region Public API
+
+#region Static Funcs
 
 ## Berechnet die Zell-Positionen eines Stücks in einer gegebenen Rotation.
 ## [param typ] — Stück-Typ-Wert (1–7).

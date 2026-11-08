@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://c1x3h8bbeslr7"]
 
-[ext_resource type="Script" uid="uid://c6vap67lwtw8j" path="res://scripts/game.gd" id="1_ig7tw"]
-[ext_resource type="PackedScene" uid="uid://dclobby01" path="res://ui/lobby.tscn" id="2_tmf9j"]
-[ext_resource type="PackedScene" uid="uid://dcsummary01" path="res://ui/summary.tscn" id="3_kvw3b"]
-[ext_resource type="Script" uid="uid://bqsj7yu7vmhok" path="res://scripts/MultiplayerManager.gd" id="4_1bvp3"]
+[ext_resource type="Script" uid="uid://c6vap67lwtw8j" path="res://scenes/main/main.gd" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://dclobby01" path="res://scenes/lobby/lobby.tscn" id="2_tmf9j"]
+[ext_resource type="PackedScene" uid="uid://dcsummary01" path="res://scenes/summary/summary.tscn" id="3_kvw3b"]
+[ext_resource type="Script" uid="uid://bqsj7yu7vmhok" path="res://scenes/main/multiplayer_manager.gd" id="4_1bvp3"]
 
 [node name="Main" type="Node2D" unique_id=101951612]
 script = ExtResource("1_ig7tw")

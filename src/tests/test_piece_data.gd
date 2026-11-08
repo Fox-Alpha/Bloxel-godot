@@ -99,26 +99,14 @@ func test_i_piece_stands_upright_after_one_rotation() -> void:
 ## Der I-Stein hat eine eigene Kick-Tabelle. Geprüft wird gegen ausgeschriebene Werte, weil ein
 ## Vergleich mit [constant PieceData.I_KICKS] einen Tippfehler in der Tabelle nicht fände.
 func test_i_piece_uses_its_own_kicks() -> void:
-	var expected: Array = [
-		Vector2i(0, 0),
-		Vector2i(-2, 0),
-		Vector2i(1, 0),
-		Vector2i(-2, 1),
-		Vector2i(1, -2),
-	]
+	var expected: Array = [Vector2i(0, 0), Vector2i(-2, 0), Vector2i(1, 0), Vector2i(-2, 1), Vector2i(1, -2)]
 
 	assert_eq(PieceData.get_kicks(TYPE_I, 0, 1), expected)
 
 
 ## J, L, S, T und Z teilen sich eine Tabelle. Die Werte stehen hier wieder ausgeschrieben.
 func test_jlstz_pieces_share_their_kicks() -> void:
-	var expected: Array = [
-		Vector2i(0, 0),
-		Vector2i(-1, 0),
-		Vector2i(-1, -1),
-		Vector2i(0, 2),
-		Vector2i(-1, 2),
-	]
+	var expected: Array = [Vector2i(0, 0), Vector2i(-1, 0), Vector2i(-1, -1), Vector2i(0, 2), Vector2i(-1, 2)]
 	for typ in JLSTZ_TYPES:
 		assert_eq(PieceData.get_kicks(typ, 0, 1), expected, "Typ %d" % typ)
 
