@@ -114,6 +114,10 @@ layout_mode = 2
 text = "Status: Idle"
 horizontal_alignment = 1
 
+[node name="QuitButton" type="Button" parent="VBox" unique_id=1277931699]
+layout_mode = 2
+text = "Quit"
+
 [node name="LogoIcon" type="TextureRect" parent="." unique_id=2015978560]
 custom_minimum_size = Vector2(250, 250)
 layout_mode = 0
