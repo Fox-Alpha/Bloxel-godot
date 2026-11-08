@@ -17,9 +17,9 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
 
   | Datei | Aufgabe |
   |---|---|
-  | `scenes/main/game.gd` | Spielablauf, Schwerkraft, Lock Delay, Punkte, UI-Labels, Multiplayer-Sync, Runden |
+  | `scenes/main/main.gd` | Spielablauf, Schwerkraft, Lock Delay, Punkte, UI-Labels, Multiplayer-Sync, Runden |
   | `scripts/board_logic.gd` | Regeln des Spielfelds: Kollision, Festsetzen, Reihen löschen |
-  | `scripts/game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `game.gd` |
+  | `scripts/game_renderer.gd` | Zeichnet Spielfeld, Stücke und Vorschau in das `_draw()` von `main.gd` |
   | `scripts/game_input.gd` | Übersetzt Tasten in Signale, DAS/ARR |
   | `scripts/piece_data.gd` | Daten der Spielsteine |
   | `scripts/board_codec.gd` | Board für die Übertragung kodieren und dekodieren |
