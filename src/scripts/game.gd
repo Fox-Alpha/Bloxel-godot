@@ -216,7 +216,9 @@ func _ready() -> void:
 	summary.ready_pressed.connect(_on_summary_ready)
 	summary.back_pressed.connect(_on_summary_back)
 	mp_manager.peer_disconnected.connect(_on_peer_disconnected)
+	lobby.visibility_changed.connect(_on_lobby_visibility_changed)
 	lobby.show()
+	_on_lobby_visibility_changed()
 	for c in $UI.get_children():
 		if c is Control:
 			c.focus_mode = Control.FOCUS_NONE
@@ -1053,6 +1055,11 @@ func _reset_multiplayer_state() -> void:
 #endregion
 
 #region Summary callbacks
+
+## Blendet die Spielanzeige aus, solange die Lobby offen ist.
+func _on_lobby_visibility_changed() -> void:
+	$UI.visible = not lobby.visible
+
 
 ## Reagiert auf "Bereit"-Button in der Summary — startet nächste Runde.
 func _on_summary_ready() -> void:
