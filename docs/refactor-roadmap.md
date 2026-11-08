@@ -28,7 +28,7 @@ Empfohlene Umsetzungsreihenfolge für die offenen Issues (#13–#20).
 |---|---|
 | 1 | `BoardCodec.encode/decode` Roundtrip |
 | 2 | `PieceData.get_cells` Rotation |
-| 3 | Board-Clear-Logik (nach #20) |
+| – | Board-Clear-Logik: gehört zu #20 |
 
 ### #20 game.gd Split 🔴
 > Voraussetzung für fast alles Weitere.

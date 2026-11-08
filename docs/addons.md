@@ -8,7 +8,7 @@ wo sie herkommen.
 | [gd-plug](#gd-plug) | aktiv, versioniert in `src/addons/gd-plug/` |
 | [Godot-AI](#godot-ai) | aktiv, nur Entwicklung |
 | [GDScript-formatter](#gdscript-formatter) | aktiv, nur Entwicklung |
-| [GUT](#gut) | geplant, in `plug.gd` auskommentiert |
+| [GUT](#gut) | aktiv, nur Entwicklung, vom Export ausgeschlossen |
 | [discord-rpc-godot](#discord-rpc-godot) | zurückgestellt, in `plug.gd` auskommentiert |
 | [log.gd](#loggd) | aktiv, statische Klasse `Log` für alle Ausgaben |
 
@@ -41,7 +41,8 @@ Formatiert und prüft GDScript-Dateien.
 GitHub: https://github.com/bitwes/Gut
 
 **Beschreibung**
-Unit-Test-Framework für GDScript, läuft im Editor und headless.
+Unit-Test-Framework für GDScript, läuft im Editor und headless. Die Tests liegen in `src/tests/`, Aufruf siehe
+`CLAUDE.md` des Projekts.
 
 ## discord-rpc-godot
 

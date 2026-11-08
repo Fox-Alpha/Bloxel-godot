@@ -30,6 +30,21 @@ Stand, offene Punkte und Planung: `docs/projekte/bloxel.md` im Repo der Projekts
   entfernt sie beim Zurückwechseln. Danach die Addons neu installieren.
 - Die Discord-Einbindung ruht auf `feature/addon_discord_rpc`.
 
+## Unit-Tests
+
+- Die Tests liegen in `src/tests/` und nutzen GUT. Jede Datei und jede Testfunktion beginnt mit `test_`.
+  `test_board_codec.gd` erklärt im Kopf, wie GUT arbeitet.
+- Im Editor: unten das Panel **GUT** öffnen, in dessen Einstellungen `res://tests` als Verzeichnis eintragen und
+  **Run All** drücken.
+- Headless im Ordner `src/`:
+
+  ```bash
+  godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+  ```
+
+  Exit-Code 0 heißt alle Tests bestanden. Nach einer frischen Addon-Installation einmal `godot --headless --import`
+  ausführen, sonst kennt Godot die Klasse `GutTest` noch nicht.
+
 ## Testen mit zwei Instanzen
 
 - `src/scripts/debug/dev_autostart.gd` startet Debug-Instanzen je nach `--instance=N` und
