@@ -37,8 +37,6 @@ const CELL := 32
 const BOARD_Y := 40
 ## Y-Position der Vorschau.
 const PREVIEW_Y := 196
-## Alphawert des Ghost-Pieces.
-const GHOST_ALPHA := 0.25
 ## Verzögerung vor DAS-Wiederholung (Sekunden).
 const DAS_DELAY := 0.17
 ## Wiederholrate während DAS (Sekunden).
@@ -319,11 +317,16 @@ func _draw() -> void:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0.05, 0.05, 0.08))
 		return
-	_draw_board(board_x, BOARD_Y, CELL, false)
+	var origin := Vector2i(board_x, BOARD_Y)
+	GameRenderer.draw_board(self, board, origin, CELL)
+	_draw_active_piece(origin)
 	if is_multiplayer and not opponent_board.is_empty():
-		_draw_board(opp_board_x, opp_board_y, opp_cell, true)
+		var opp_origin := Vector2i(opp_board_x, opp_board_y)
+		GameRenderer.draw_board(
+				self, opponent_board, opp_origin, opp_cell, GameRenderer.OPPONENT_ALPHA,
+		)
 	preview_x = board_x + COLS * CELL + GRID_BORDER * 2 + UI_OFFSET_X
-	_draw_preview()
+	GameRenderer.draw_preview(self, next_type, Vector2(preview_x, PREVIEW_Y - 4), CELL)
 	if game_over or summary.visible:
 		var vs := get_viewport().get_visible_rect().size
 		draw_rect(Rect2(Vector2(), vs), Color(0, 0, 0, 0.55))
@@ -746,102 +749,17 @@ func _draw_ui_labels() -> void:
 
 #region Drawing
 
-## Zeichnet ein Spielfeld (eigenes oder Gegner) inkl. Grid, Blöcke und Ghost.
-## [param origin_x] — X-Position des Board-Origins.
-## [param origin_y] — Y-Position des Board-Origins.
-## [param cell_size] — Pixelgrösse einer Zelle.
-## [param is_opponent] — Ob das Gegner-Board gezeichnet wird.
-func _draw_board(origin_x: int, origin_y: int, cell_size: int, is_opponent: bool) -> void:
-	var border := Color(0.3, 0.3, 0.4)
-	var bg := Color(0.05, 0.05, 0.08)
-	var grid := Color(0.2, 0.2, 0.25)
-	var bw := COLS * cell_size
-	var bh := ROWS * cell_size
-	draw_rect(Rect2(origin_x - 2, origin_y - 2, bw + 4, bh + 4), border)
-	draw_rect(Rect2(origin_x, origin_y, bw, bh), bg)
-	for c in range(COLS + 1):
-		var x := origin_x + c * cell_size
-		draw_line(Vector2(x, origin_y), Vector2(x, origin_y + bh), grid)
-	for r in range(ROWS + 1):
-		var y := origin_y + r * cell_size
-		draw_line(Vector2(origin_x, y), Vector2(origin_x + bw, y), grid)
-	# Eigenes oder Gegner-Board als Block-Quelle verwenden.
-	var src_board: Array = opponent_board if is_opponent else board
-	for row in range(HIDDEN, TOTAL_ROWS):
-		for col in range(COLS):
-			var t: int = 0
-			if not src_board.is_empty() and row < src_board.size():
-				t = src_board[row][col]
-			if t != 0:
-				var rect := Rect2(
-					origin_x + col * cell_size + 1,
-					origin_y + (row - HIDDEN) * cell_size + 1,
-					cell_size - 2,
-					cell_size - 2,
-				)
-				var block_col := _get_opp_color(t) if is_opponent else PieceData.get_color(t)
-				draw_rect(rect, block_col)
-	# Ghost-Piece (transparent) + aktives Piece (deckend) zeichnen.
-	if not is_opponent and not game_over and not current.is_empty():
-		var g := _ghost_y()
-		_draw_piece(
-			current.type, current.rot, current.x, g, GHOST_ALPHA,
-			origin_x, origin_y, cell_size,
-		)
-		_draw_piece(
-			current.type, current.rot, current.x, current.y, 1.0,
-			origin_x, origin_y, cell_size,
-		)
-
-
-## Gibt die Farbe eines Gegner-Blocks mit reduzierter Transparenz zurück.
-func _get_opp_color(typ: int) -> Color:
-	var c: Color = PieceData.get_color(typ)
-	c.a = 0.7
-	return c
-
-
-## Zeichnet ein einzelnes Piece auf dem Spielfeld (für Ghost und aktuelles Piece).
-## [param typ] — PieceType.
-## [param rot] — Rotation 0–3.
-## [param px] — X-Position des Piece-Origins.
-## [param py] — Y-Position des Piece-Origins.
-## [param alpha] — Transparenzwert (0.0–1.0).
-## [param origin_x] — Board-Origin X.
-## [param origin_y] — Board-Origin Y.
-## [param cell_size] — Pixelgrösse einer Zelle.
-func _draw_piece(
-		typ: int, rot: int, px: int, py: int, alpha: float,
-		origin_x: int, origin_y: int, cell_size: int,
-) -> void:
-	var cels: Array = _get_cells(typ, rot)
-	var col: Color = PieceData.get_color(typ)
-	col.a = alpha
-	for cell in cels:
-		var cx := px + int(cell.x)
-		var cy := py + int(cell.y)
-		if cy < HIDDEN or cy >= TOTAL_ROWS:
-			continue
-		var rect := Rect2(
-			origin_x + cx * cell_size + 1,
-			origin_y + (cy - HIDDEN) * cell_size + 1,
-			cell_size - 2,
-			cell_size - 2,
-		)
-		draw_rect(rect, col)
-
-
-## Zeichnet die Vorschau des nächsten Pieces.
-func _draw_preview() -> void:
-	if not PieceData.PIECE_CELLS.has(next_type):
+## Zeichnet Ghost Piece und aktives Stück auf das eigene Spielfeld.
+## [param origin] — Pixelposition des Spielfelds.
+func _draw_active_piece(origin: Vector2i) -> void:
+	if game_over or current.is_empty():
 		return
-	var cels: Array = PieceData.PIECE_CELLS[next_type]
-	var col: Color = PieceData.get_color(next_type)
-	var ps := CELL * 0.8
-	var py := PREVIEW_Y - 4
-	draw_rect(Rect2(preview_x - 4, py, 5 * ps, 5 * ps), Color(0.1, 0.1, 0.12))
-	for cell in cels:
-		draw_rect(Rect2(preview_x + cell.x * ps, py + cell.y * ps, ps - 2, ps - 2), col)
+	var ghost_pos := Vector2i(current.x, _ghost_y())
+	var piece_pos := Vector2i(current.x, current.y)
+	GameRenderer.draw_piece(
+			self, current.type, current.rot, ghost_pos, GameRenderer.GHOST_ALPHA, origin, CELL,
+	)
+	GameRenderer.draw_piece(self, current.type, current.rot, piece_pos, 1.0, origin, CELL)
 
 #endregion
 
